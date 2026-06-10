@@ -254,6 +254,11 @@ def animate_full(path="docs/watch_full_animation.gif"):
         (at(T.barrel_drum(), P.P_BARREL), "#b89030", 0.85),
         (F.dial(), "#f5f0e6", 0.30),
     ]
+    def _sechand():
+        m = F.seconds_hand()
+        m.apply_translation([P.P_SECONDS[0], P.P_SECONDS[1], 24.7])
+        return m
+
     moving_base = {
         "center": (at(T.center_wheel(), (0, 0)), "#cc6633", 1.0, (0, 0)),
         "arbor":  (at(T.center_arbor(), (0, 0)), "#cc6633", 1.0, (0, 0)),
@@ -287,11 +292,6 @@ def animate_full(path="docs/watch_full_animation.gif"):
                      P.P_SECONDS),
         "sechand": (_sechand(), "#aa2020", 1.0, P.P_SECONDS),
     }
-    def _sechand():
-        m = F.seconds_hand()
-        m.apply_translation([P.P_SECONDS[0], P.P_SECONDS[1], 24.7])
-        return m
-
     stem_base, crown_base = F.stem(), F.crown()
 
     # ---------------- timeline -----------------------------------------
