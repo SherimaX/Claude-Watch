@@ -126,6 +126,8 @@ BAL_SQUARE = 2.8       # across flats; mating square holes 2.9
 BAL_RIM_OD = 30.0
 BAL_RIM_ID = 26.0
 BAL_WEIGHT_HOLES = 8   # M3 holes in rim for tuning nuts
+BAL_BOSS_R = 2.3       # boss around each hole (rim sweep = rmid + 2.3)
+COCK_LEG_D = 20.5      # cock legs INBOARD of A, outside the rim sweep
 
 # hairspring (separate flat part, press onto square arbor)
 HS_R0 = 3.5

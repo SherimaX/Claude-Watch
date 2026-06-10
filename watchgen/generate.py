@@ -95,10 +95,20 @@ def run_checks():
     chk("drum vs 3rd pinion", _d(P.P_BARREL, P.P_THIRD) - P.DRUM_OR - pt_, 0.5)
     chk("drum vs balance arbor", _d(P.P_BARREL, P.P_BALANCE) - P.DRUM_OR - 2.2, 0.5)
     chk("lever pivot vs center wheel", _d(P.P_LEVER, (0, 0)) - wt - 1.0, 0.4)
-    chk("balance rim inside case", P.CASE_ID / 2 - (_d(P.P_BALANCE, (0, 0)) + P.BAL_RIM_OD / 2), 0.5)
-    chk("balance rim vs ratchet", _d(P.P_BALANCE, P.P_BARREL) - P.BAL_RIM_OD / 2 - P.RATCHET_R, 0.5)
+    bal_sweep = (P.BAL_RIM_OD + P.BAL_RIM_ID) / 4 + P.BAL_BOSS_R  # 16.3
+    chk("balance sweep inside case",
+        P.CASE_ID / 2 - (_d(P.P_BALANCE, (0, 0)) + bal_sweep), 0.5)
+    u = P.P_BALANCE / np.linalg.norm(P.P_BALANCE)
+    chk("cock legs clear balance sweep", P.COCK_LEG_D - 3.0 - bal_sweep, 0.3)
+    chk("cock legs inside plate",
+        P.PLATE_R - (_d(P.P_BALANCE - P.COCK_LEG_D * u, (0, 0)) + 7.5), 0.3)
+    chk("cock legs clear hairspring",
+        P.COCK_LEG_D - 3.0 - (P.HS_R0 + P.HS_PITCH * P.HS_TURNS + 2.4), 0.3)
+    chk("crown-whl bars vs balance sweep",
+        _d(P.P_BALANCE, P.KW_CROWN_WHEEL) - 5.4 - bal_sweep, 0.4)
     pivot, ang, abut = F.click_geo()
-    chk("click pivot vs balance rim", _d(pivot, P.P_BALANCE) - P.BAL_RIM_OD / 2 - 3.0, 0.5)
+    chk("click pins vs balance sweep",
+        _d(pivot, P.P_BALANCE) - bal_sweep - 3.0, 0.5)
     # pillars vs everything
     objs = [((0, 0), wt, "center wheel"), (P.P_BARREL, wt, "barrel gear"),
             (P.P_THIRD, wt, "third wheel"), (P.P_FOURTH, wt, "fourth wheel"),

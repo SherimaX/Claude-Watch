@@ -46,7 +46,7 @@ def back_plate():
     # balance cock screw bosses (self-tap M3 from the back)
     u = P.P_BALANCE / np.linalg.norm(P.P_BALANCE)
     v = np.array([-u[1], u[0]])
-    leg0 = P.P_BALANCE + 13.5 * u
+    leg0 = P.P_BALANCE - P.COCK_LEG_D * u
     for s in (+1, -1):
         holes.append((leg0 + 4.5 * s * v, 2.5))
     holes += [(P.KW_SETTING, 3.4),                 # setting-shaft bearing
@@ -107,7 +107,7 @@ def front_plate():
 def balance_cock():
     A = P.P_BALANCE
     u = A / np.linalg.norm(A)
-    leg0 = A + 13.5 * u
+    leg0 = A - P.COCK_LEG_D * u
     v = np.array([-u[1], u[0]])
     stud = A + np.array([P.HS_R0 + P.HS_PITCH * P.HS_TURNS + 1.2, 0.0])
     body = rounded_bar(_pt(A), _pt(leg0), 7.0)

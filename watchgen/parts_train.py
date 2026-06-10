@@ -195,13 +195,22 @@ def balance_wheel():
     spokes = union(*[sa.rotate(rect(P.BAL_RIM_OD - 2, 2.4, c=(0, 0)), a,
                                origin=(0, 0)) for a in (0, 90)])
     hub = circle(4.0)
-    w = union(rim, spokes, hub).difference(square_hole(P.BAL_SQUARE + 0.1))
-    # M3 self-tap holes in the rim for tuning screws/nuts
+    w = union(rim, spokes, hub)
+    # M3 self-tap holes for tuning screws/nuts: each hole gets a boss so
+    # the 2.5 mm bore cannot sever the 2 mm-wide rim
     n = P.BAL_WEIGHT_HOLES
     rmid = (P.BAL_RIM_OD + P.BAL_RIM_ID) / 4
     for i in range(n):
         a = 2 * np.pi * (i + 0.5) / n
-        w = w.difference(circle(1.25, (rmid * np.cos(a), rmid * np.sin(a))))
+        c = (rmid * np.cos(a), rmid * np.sin(a))
+        w = w.union(circle(P.BAL_BOSS_R, c))
+    w = w.difference(square_hole(P.BAL_SQUARE + 0.1))
+    for i in range(n):
+        a = 2 * np.pi * (i + 0.5) / n
+        w = w.difference(circle(1.25, (rmid * np.cos(a),
+                                       rmid * np.sin(a))))
+    assert w.geom_type == "Polygon", \
+        "balance wheel outline must stay one connected piece"
     return zspan(w, P.Z_BAL_RIM)
 
 
