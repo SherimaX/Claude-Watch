@@ -76,15 +76,15 @@ def animate_full(path="docs/clock_animation.gif", N=120, fps=16):
     frames = []
     for i in range(N):
         prog = i / N
-        fig = plt.figure(figsize=(5.6, 9.2))
-        ax = R.setup_axes(fig, lim_xy=72, z0=-4, z1=312,
+        fig = plt.figure(figsize=(6.6, 8.4))
+        ax = R.setup_axes(fig, lim_xy=80, z0=-4, z1=196,
                           elev=12.0 + 3.0 * np.sin(4 * np.pi * prog),
                           azim=-90.0 + 26.0 * np.sin(2 * np.pi * prog))
         R.draw(ax, R.pose_scene(meshes, chain, tl[i],
                                 dome_fn=parts.hairspring_dome))
         ax.set_position([-0.30, -0.10, 1.60, 1.22])
         fig.text(0.5, 0.022,
-                 "spherical tourbillon: cage 60 s / carriage 12 s "
+                 "spherical tourbillon: sphere 60 s / carriage 12 s "
                  "(8x speed)", ha="center", fontsize=9)
         frames.append(R.grab(fig))
         plt.close(fig)

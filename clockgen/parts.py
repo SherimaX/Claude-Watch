@@ -3,8 +3,8 @@
 Each part is built in its own LOCAL frame: +Z = its spin axis, origin =
 its pivot (static parts are built in world coordinates directly).  The
 CHAIN maps part -> (parent, rest pose in parent frame, spin tag); the
-animation inserts a Z-rotation at every joint, so nested motion (outer
-cage carrying the inner carriage carrying the balance) falls out of
+animation inserts a Z-rotation at every joint, so nested motion (the
+sphere carrying the inner carriage carrying the balance) falls out of
 plain matrix composition.
 """
 import numpy as np
@@ -14,57 +14,51 @@ import shapely.affinity as sa
 from watchgen.geometry import (gear_outline, escape_outline, spiral_ribbon,
                                circle, ring, rect, poly, union, rounded_bar)
 from . import params as P
-from .geometry3d import (lathe, tube, arc_path, ring_torus, sphere_panel,
-                         sphere_arc, cyl, ball, box, crown_teeth,
+from .geometry3d import (lathe, tube, arc_path, ring_torus, cyl_panel,
+                         cyl, ball, box, crown_teeth,
                          extrude_flat, frame, rotm, transm, put, merge)
 
 
 # =================================================================== base
 def plinth():
-    pr = [(0, 0), (62, 0), (62, 6.5), (59, 8.5), (47, 9.5), (41.5, 13),
-          (32, 14.8), (24, 15.5), (0, 15.5)]
+    pr = [(0, 0), (48, 0), (48, 6.5), (45.5, 8.5), (37, 9.5), (32, 13),
+          (25, 14.8), (19, 15.5), (0, 15.5)]
     return lathe(pr, n=56)
 
 
 def cradle():
-    m = ring_torus(19.0, 3.0, n_main=40, n_tube=8)
-    m.apply_translation([0, 0, 17.0])
+    """Gold ring hugging the pedestal foot."""
+    m = ring_torus(P.PED_BASE_R + 0.6, 2.0, n_main=48, n_tube=8)
+    m.apply_translation([0, 0, P.PLINTH_H + 1.6])
     return m
 
 
-def base_sphere_steel():
-    """Openwork armillary shell: solid cap + collar + meridian ribs."""
-    parts = []
-    sp = lambda *a, **k: put(sphere_panel(*a, **k), transm([0, 0, P.SPH_C]))
-    parts.append(sp(P.SPH_R, P.SPH_T, -85.0, P.RIB_LAT[0], n_lat=8))
-    parts.append(sp(P.SPH_R, P.SPH_T, P.RIB_LAT[1], 74.5, n_lat=6))
-    for lon in P.RIB_LONS:
-        m = sphere_arc(P.SPH_R - 0.4, P.RIB_LAT[0] + 1, P.RIB_LAT[1] - 1,
-                       lon, P.RIB_R, n=26, n_tube=6)
-        parts.append(put(m, transm([0, 0, P.SPH_C])))
-    # partial equator band, open at the front (front = -Y = -90 deg lon)
-    eq = tube(arc_path(P.SPH_R - 0.4, -55.0, 235.0, n=56), 2.0, n=6)
-    parts.append(put(eq, transm([0, 0, P.SPH_C])))
+def pedestal():
+    """Openwork drum housing the barrel: foot, two side wall panels
+    (front and back stay open), top plate ring, porthole bezels."""
+    z0 = P.PLINTH_H
+    parts = [lathe([(0, z0), (P.PED_BASE_R, z0),
+                    (P.PED_BASE_R - 1.5, z0 + 3.5),
+                    (P.PED_WALL_R, z0 + 4.5), (0, z0 + 4.5)], n=48)]
+    for lon0, lon1 in P.PED_WALL_LONS:
+        parts.append(cyl_panel(P.PED_WALL_R, P.PED_WALL_T,
+                               P.PED_WALL_Z[0], P.PED_WALL_Z[1],
+                               lon0, lon1, n_lon=22))
+    parts.append(lathe([(P.PED_PLATE_IR, P.PED_PLATE_Z[0]),
+                        (P.PED_PLATE_OR, P.PED_PLATE_Z[0]),
+                        (P.PED_PLATE_OR - 2.0, P.PED_PLATE_Z[1]),
+                        (P.PED_PLATE_IR, P.PED_PLATE_Z[1])], n=48))
     return merge(*parts)
 
 
-def base_sphere_gold():
-    """Latitude hoops + porthole bezels (the jewellery layer)."""
-    parts = []
-    for lat in P.HOOP_LATS:
-        r = (P.SPH_R - 0.2) * np.cos(np.radians(lat))
-        z = P.SPH_C + (P.SPH_R - 0.2) * np.sin(np.radians(lat))
-        parts.append(put(ring_torus(r, 1.6, n_main=48, n_tube=6),
-                         transm([0, 0, z])))
-    # front porthole bezel (frames the mainspring view)
-    yf = -np.sqrt(P.SPH_R ** 2 - 15.0 ** 2)
-    parts.append(put(ring_torus(15.0, 1.5, n_main=40, n_tube=6),
-                     frame((0, yf, P.SPH_C), (0, -1, 0))))
-    # back porthole bezel (the winding key passes through)
-    yb = np.sqrt(P.SPH_R ** 2 - 10.0 ** 2)
-    parts.append(put(ring_torus(10.0, 1.5, n_main=36, n_tube=6),
-                     frame((0, yb, P.SPH_C), (0, 1, 0))))
-    return merge(*parts)
+def pedestal_gold():
+    """Porthole bezels (the jewellery layer of the base)."""
+    yw = P.PED_WALL_R - 0.5
+    return merge(
+        put(ring_torus(P.PORT_F_R, 1.5, n_main=40, n_tube=6),
+            frame((0, -yw, P.BARREL_C[2]), (0, -1, 0))),
+        put(ring_torus(P.PORT_B_R, 1.5, n_main=36, n_tube=6),
+            frame((0, yw, P.BARREL_C[2]), (0, 1, 0))))
 
 
 # ------------------------------------------------------- barrel and key
@@ -72,12 +66,12 @@ def barrel_drum():
     """Drum + ring gear + mainspring, local +Z = drum axis (-> +Y world).
     The open front ring leaves the spiral visible through the porthole."""
     parts = [
-        lathe([(20.0, 0), (25.5, 0), (25.5, 2.0), (20.0, 2.0)], n=48),
-        lathe([(25.0, 0), (27.0, 0), (27.0, 19.0), (25.0, 19.0)], n=48),
-        lathe([(4.5, 17.2), (27.0, 17.2), (27.0, 19.0), (4.5, 19.0)], n=48),
+        lathe([(13.0, 0), (16.2, 0), (16.2, 2.0), (13.0, 2.0)], n=48),
+        lathe([(15.0, 0), (16.5, 0), (16.5, 14.0), (15.0, 14.0)], n=48),
+        lathe([(4.5, 12.4), (16.5, 12.4), (16.5, 14.0), (4.5, 14.0)], n=48),
     ]
-    g = gear_outline(1.8, 30, 0.0, backlash=0.3, flank_pts=5)
-    g = g.difference(circle(24.5))
+    g = gear_outline(P.DRUM_M, P.DRUM_T, 0.0, backlash=0.25, flank_pts=5)
+    g = g.difference(circle(14.8))
     parts.append(extrude_flat(g, 2.5, 0.0))
     return merge(*parts)
 
@@ -85,8 +79,8 @@ def barrel_drum():
 def mainspring_clock():
     """Blued spiral, visible through the front porthole (rides with the
     drum; its slow unwinding is invisible at animation timescales)."""
-    sp = spiral_ribbon(6.0, 2.7, 6.2, 1.5, ccw=True, n_per_turn=36)
-    return extrude_flat(sp, 12.0, 3.0)
+    sp = spiral_ribbon(4.0, 1.55, 6.0, 1.2, ccw=True, n_per_turn=36)
+    return extrude_flat(sp, 9.0, 2.0)
 
 
 def winding_key():
@@ -95,16 +89,16 @@ def winding_key():
     parts = [
         cyl(2.2, 39.0, -37.0, n=12),            # arbor through the drum
         cyl(4.2, 4.0, -36.0, n=12),             # spring-hook core
-        cyl(2.6, 44.0, 0.0, n=12),              # key shaft
-        cyl(4.4, 3.0, 3.5, n=12),               # collar at the bezel
+        cyl(2.6, 20.0, 0.0, n=12),              # key shaft
+        cyl(4.4, 3.0, -1.5, n=12),              # collar at the bezel
     ]
     g = gear_outline(1.0, 14, 0.0, backlash=0.25, flank_pts=4)
     parts.append(extrude_flat(g.difference(circle(2.0)), 2.2, 8.0))  # ratchet
     bow = ring_torus(6.5, 1.7, n_main=32, n_tube=8)
     bow.apply_transform(rotm([1, 0, 0], 90))
-    bow.apply_translation([0, 0, 50.5])
+    bow.apply_translation([0, 0, 26.5])
     parts.append(bow)
-    parts.append(cyl(1.4, 6.0, 43.0, n=8))      # bow stem
+    parts.append(cyl(1.4, 6.0, 19.0, n=8))      # bow stem
     return merge(*parts)
 
 
@@ -112,15 +106,15 @@ def click_pawl():
     """Tiny pawl resting on the ratchet (static, world coords)."""
     m = box((1.8, 6.5, 2.4))
     m.apply_transform(rotm([1, 0, 0], -38))
-    m.apply_translation([0, P.KEY_Y0 + 11.5, P.SPH_C + 8.6])
+    m.apply_translation([0, P.KEY_Y0 + 9.2, P.BARREL_C[2] + 8.8])
     return m
 
 
 # ------------------------------------------------ drive line in the base
 def gearbox():
     """Collar gearbox drum: encloses the 48:1 reduction (static, world).
-    The transfer arbor pierces its front wall; the centre shaft and the
-    Y rod leave through the top and the back."""
+    The transfer arbor pierces its front wall; the centre shaft leaves
+    through the top, the Y rod through the front."""
     m = lathe([(0, -P.GBOX_H / 2), (P.GBOX_R, -P.GBOX_H / 2),
                (P.GBOX_R, P.GBOX_H / 2), (0, P.GBOX_H / 2)], n=32)
     m.apply_translation(P.GBOX_C)
@@ -129,20 +123,20 @@ def gearbox():
 
 def transfer_arbor():
     """Pinion meshing the drum ring gear, slow.  Local +Z -> +Y world."""
-    g = gear_outline(1.8, 8, 0.4, backlash=0.3, flank_pts=4)
+    g = gear_outline(P.DRUM_M, P.TRANS_T, 0.4, backlash=0.25, flank_pts=4)
     m = extrude_flat(g, 2.2, 0.0)
     return merge(m, cyl(1.4, 8.5, -1.0, n=10))
 
 
 def center_shaft():
-    """1 rpm vertical shaft: gearbox -> tourbillon cage pipe."""
+    """1 rpm vertical shaft: gearbox -> sphere cage pipe."""
     m = cyl(1.6, 26.0, 0.0, n=12)
     m = merge(m, cyl(3.1, 1.6, 24.4, n=10))            # cage drive key
     return m
 
 
 def y_rod():
-    """1 rpm take-off to the rear pod.  Local +Z -> +Y world."""
+    """1 rpm take-off to the front pod.  Local +Z -> -Y world."""
     m = cyl(1.2, 21.0, 0.0, n=10)
     m = merge(m, crown_teeth(2.6, 10, 1.1, 1.6, 2.0, 0.5, tilt=40),
               cyl(2.6, 0.8, 0.0, n=16),
@@ -152,19 +146,22 @@ def y_rod():
 
 
 def column_pod():
-    """Bevel pods: collar shoulder + swan-neck relay knuckle (static)."""
-    return merge(ball(4.8, P.POD_C, sub=2), ball(4.5, P.RELAY_C, sub=2))
+    """Bevel pod on the plate rim (static)."""
+    return ball(4.8, P.POD_C, sub=2)
 
 
-def column_shaft_segs():
-    """The seconds line bows around the tourbillon in two straight
-    spinning segments meeting at the relay knuckle."""
+def column_shaft_seg():
+    """The seconds line climbs from the front pod straight up to the
+    canister inlet behind the dial, as one spinning segment."""
+    df = dial_frame()
     a = P.POD_C + np.array([0.0, 0.0, 2.0])
-    b = np.array([0.0, 14.1, 234.6])      # canister inlet boss
-    return (a, P.RELAY_C), (P.RELAY_C, b)
+    b = (df[:3, 3] + df[:3, 1] * (-P.CAN_R)
+         + df[:3, 2] * (-(P.DIAL_T / 2 + P.CAN_GAP + P.CAN_D / 2)))
+    return a, b
 
 
-def _shaft(a, b):
+def col_shaft():
+    a, b = column_shaft_seg()
     L = np.linalg.norm(np.asarray(b) - np.asarray(a))
     m = cyl(1.2, L, 0.0, n=10)
     m = merge(m, crown_teeth(2.4, 10, 1.0, 1.5, 1.8, 0.6, tilt=40),
@@ -174,31 +171,24 @@ def _shaft(a, b):
     return m
 
 
-def col_shaft_a():
-    (a, b), _ = column_shaft_segs()
-    return _shaft(a, b)
-
-
-def col_shaft_b():
-    _, (a, b) = column_shaft_segs()
-    return _shaft(a, b)
-
-
 def column_curve(s_x, n=40):
-    """Centreline of one swan-neck column (quadratic bezier)."""
-    p0 = np.array([s_x, 30.0, 97.0])
-    pm = np.array([s_x * 1.4, 74.0, 150.0])
-    p1 = np.array([s_x, 15.5, 237.0])
+    """Centreline of one swan-neck column (quadratic bezier), bowing up
+    in front of the sphere to the canister behind the dial."""
+    p0 = np.array([s_x, -36.0, P.PLINTH_H])
+    pm = np.array([s_x * 1.4, -60.0, 62.0])
+    p1 = np.array([s_x * 0.3, -45.5, 106.0])
     t = np.linspace(0, 1, n)[:, None]
     return (1 - t) ** 2 * p0 + 2 * (1 - t) * t * pm + t ** 2 * p1
 
 
 def columns():
-    """Twin swan-neck columns bowing around the tourbillon (static)."""
+    """Twin swan-neck columns carrying the floating dial (static)."""
     parts = []
+    mids = []
     for s in (-1, 1):
         pth = column_curve(s * P.COL_X)
         parts.append(tube(pth, P.COL_ROD_R, n=10))
+        mids.append(pth[len(pth) // 2])
         # collars
         for tt in (0.18, 0.5, 0.82):
             i = int(tt * (len(pth) - 1))
@@ -206,15 +196,16 @@ def columns():
             parts.append(put(lathe([(1.0, -1.6), (P.COL_ROD_R + 1.3, -1.6),
                                     (P.COL_ROD_R + 1.3, 1.6), (1.0, 1.6)],
                                    n=8), frame(pth[i], d)))
-    # foot pad on the sphere collar + bracket to the canister back
-    parts.append(put(cyl(8.5, 5.0, -2.5, n=24),
-                     frame((0, 30.0, 97.0), (0, -0.25, 1))))
+        # foot pad on the plinth
+        parts.append(put(cyl(4.5, 4.0, -2.0, n=20),
+                         frame((s * P.COL_X, -36.0, P.PLINTH_H), (0, 0, 1))))
+    # bracket pad onto the canister back
+    pad_c = P.DIAL_C + P.dial_normal() * (
+        -(P.DIAL_T / 2 + P.CAN_GAP + P.CAN_D + 1.0))
     parts.append(put(cyl(7.0, 3.0, -1.5, n=24),
-                     frame((0, 15.5, 236.0), P.dial_normal())))
-    # cross-strut between the columns at the relay
-    parts.append(tube(np.linspace((-P.COL_X * 1.18, 51.5, 152.0),
-                                  (P.COL_X * 1.18, 51.5, 152.0), 2),
-                      1.4, n=8))
+                     frame(tuple(pad_c), P.dial_normal())))
+    # cross-strut between the columns at mid-height
+    parts.append(tube(np.linspace(mids[0], mids[1], 2), 1.4, n=8))
     return merge(*parts)
 
 
@@ -224,9 +215,10 @@ def stalk():
     vase = lathe([(0, P.STALK_Z0), (11.5, P.STALK_Z0),
                   (10.0, P.STALK_Z0 + 2.0), (5.4, P.STALK_Z0 + 4.5),
                   (6.6, P.STALK_Z0 + 7.0), (0, P.STALK_Z0 + 7.0)], n=40)
-    trumpet = lathe([(6.6, 109.0), (6.6, 116.0), (9.3, 117.8),
-                     (9.3, P.TRUMPET_Z1), (7.2, P.TRUMPET_Z1),
-                     (7.2, 109.0)], n=40)
+    zt = P.STALK_Z0 + 7.0
+    trumpet = lathe([(6.6, zt), (6.6, P.TRUMPET_Z1 - 3.4),
+                     (9.3, P.TRUMPET_Z1 - 1.6), (9.3, P.TRUMPET_Z1),
+                     (7.2, P.TRUMPET_Z1), (7.2, zt)], n=40)
     sun = crown_teeth(P.SUN_R, 24, 1.4, 1.8, 2.2, P.TRUMPET_Z1, tilt=35)
     return merge(vase, trumpet, sun)
 
@@ -258,6 +250,18 @@ def outer_cage():
     parts.append(tube(np.linspace((-30.5, 0, -3.8), p2, 2), 0.8, n=6))
     for p in (p1, p2):
         parts.append(put(cyl(1.6, 2.2, -1.1, n=10), frame(p, d)))
+    return merge(*parts)
+
+
+def cage_hoops():
+    """Gold latitude hoops riding on the cage -- the armillary dressing
+    that makes the whole sphere read (and spin) as one globe."""
+    parts = []
+    for lat in P.HOOP_LATS:
+        r = (P.CAGE_R + P.HOOP_R_OFF) * np.cos(np.radians(lat))
+        z = (P.CAGE_R + P.HOOP_R_OFF) * np.sin(np.radians(lat))
+        parts.append(put(ring_torus(r, P.HOOP_TUBE, 52, 8),
+                         transm([0, 0, z])))
     return merge(*parts)
 
 
@@ -478,22 +482,22 @@ def _f(origin, zdir, xhint=(1, 0, 0)):
 def build():
     """Return (meshes, chain).  chain: name -> (parent, M0, spin_tag)."""
     df = dial_frame()
-    seg_a, seg_b = column_shaft_segs()
+    seg = column_shaft_seg()
     d_lay = (P.LAY_B - P.LAY_A) / np.linalg.norm(P.LAY_B - P.LAY_A)
 
     meshes = {
         "plinth": plinth(), "cradle": cradle(),
-        "sphere_steel": base_sphere_steel(),
-        "sphere_gold": base_sphere_gold(),
+        "pedestal": pedestal(), "pedestal_gold": pedestal_gold(),
         "barrel": barrel_drum(), "spring": mainspring_clock(),
         "key": winding_key(),
         "click": click_pawl(), "gearbox": gearbox(),
         "transfer": transfer_arbor(), "center_shaft": center_shaft(),
         "y_rod": y_rod(), "pod": column_pod(),
-        "col_shaft_a": col_shaft_a(), "col_shaft_b": col_shaft_b(),
+        "col_shaft": col_shaft(),
         "columns": columns(),
         "stalk": stalk(),
-        "cage": outer_cage(), "cage_rubies": cage_rubies(),
+        "cage": outer_cage(), "hoops": cage_hoops(),
+        "cage_rubies": cage_rubies(),
         "lay": lay_shaft(),
         "inner": inner_cage(), "inner_rubies": inner_rubies(),
         "balance": balance_wheel(), "dome": hairspring_dome(0.0),
@@ -507,23 +511,22 @@ def build():
     chain = {
         # statics (world frame)
         "plinth": (None, I, None), "cradle": (None, I, None),
-        "sphere_steel": (None, I, None), "sphere_gold": (None, I, None),
+        "pedestal": (None, I, None), "pedestal_gold": (None, I, None),
         "click": (None, I, None), "gearbox": (None, I, None),
         "pod": (None, I, None), "columns": (None, I, None),
         "stalk": (None, I, None),
         # base mechanism
-        "barrel": (None, _f((0, -6.5, P.SPH_C), (0, 1, 0)), "drum"),
+        "barrel": (None, _f((0, -7.0, P.BARREL_C[2]), (0, 1, 0)), "drum"),
         "spring": ("barrel", np.eye(4), None),
-        "key": (None, _f((0, P.KEY_Y0, P.SPH_C), (0, 1, 0)), None),
+        "key": (None, _f((0, P.KEY_Y0, P.BARREL_C[2]), (0, 1, 0)), None),
         "transfer": (None, _f(tuple(P.TRANSFER_C), (0, 1, 0)), "slow"),
-        "center_shaft": (None, _f((0, 0, 92.0), (0, 0, 1)), "sec"),
-        "y_rod": (None, _f((0, 8.0, 98.5), (0, 1, 0)), "sec"),
-        "col_shaft_a": (None, _f(tuple(seg_a[0]),
-                                 tuple(seg_a[1] - seg_a[0])), "sec"),
-        "col_shaft_b": (None, _f(tuple(seg_b[0]),
-                                 tuple(seg_b[1] - seg_b[0])), "sec"),
-        # tourbillon chain
+        "center_shaft": (None, _f((0, 0, 60.5), (0, 0, 1)), "sec"),
+        "y_rod": (None, _f((0, -1.0, P.POD_C[2]), (0, -1, 0)), "sec"),
+        "col_shaft": (None, _f(tuple(seg[0]),
+                               tuple(seg[1] - seg[0])), "sec"),
+        # the sphere (tourbillon chain)
         "cage": (None, transm(P.TOURB_C), "cage"),
+        "hoops": ("cage", I, None),
         "cage_rubies": ("cage", I, None),
         "lay": ("cage", _f(tuple(P.LAY_A), tuple(d_lay)), "lay"),
         "inner": ("cage", _f((0, 0, 0), (1, 0, 0), (0, 0, 1)), "inner"),
@@ -532,7 +535,7 @@ def build():
         "dome": ("inner", _f((0, P.DOME_Y0, 0), (0, 1, 0)), None),
         "escape": ("inner", _f((P.ESC_POS, 1.8, 0), (0, 1, 0)), "escape"),
         "lever": ("inner", _f((P.LEVER_POS, 4.0, 0), (0, 1, 0)), "lever"),
-        # dial group
+        # dial group (floats in front of the sphere)
         "dial": (None, df, None),
         "markers": (None, df, None),
         "canister": (None, df, None),
@@ -546,15 +549,16 @@ def build():
 
 COLORS = {
     "plinth": "#2e3138", "cradle": "#c9a227",
-    "sphere_steel": "#a7b0b9", "sphere_gold": "#c9a227",
+    "pedestal": "#a7b0b9", "pedestal_gold": "#c9a227",
     "barrel": "#a8842c", "spring": "#2b4bb3",
     "key": "#71757b", "click": "#71757b",
     "gearbox": "#9c7c2c", "transfer": "#888c92",
     "center_shaft": "#6a6e74", "y_rod": "#84888f",
-    "pod": "#9c7c2c", "col_shaft_a": "#84888f", "col_shaft_b": "#84888f",
+    "pod": "#9c7c2c", "col_shaft": "#84888f",
     "columns": "#3a3e45",
     "stalk": "#8f99a3",
-    "cage": "#d4af37", "cage_rubies": "#c0182c", "lay": "#b8743a",
+    "cage": "#d4af37", "hoops": "#c9a227",
+    "cage_rubies": "#c0182c", "lay": "#b8743a",
     "inner": "#9aa6b2", "inner_rubies": "#c0182c",
     "balance": "#b87333", "dome": "#2b4bb3",
     "escape": "#cc3366", "lever": "#dd2222",

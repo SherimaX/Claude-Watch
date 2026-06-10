@@ -80,7 +80,7 @@ def draw(ax, scene):
     return pc
 
 
-def setup_axes(fig, lim_xy=72, z0=-4, z1=312, elev=13, azim=-90):
+def setup_axes(fig, lim_xy=80, z0=-4, z1=196, elev=13, azim=-90):
     ax = fig.add_subplot(111, projection="3d")
     ax.set_xlim(-lim_xy, lim_xy)
     ax.set_ylim(-lim_xy, lim_xy)
@@ -105,6 +105,6 @@ def autocrop(frames, pad=8):
     return [f[y0:y1, x0:x1] for f in frames]
 
 
-SPHERE_ONLY = {"cage", "cage_rubies", "lay", "inner", "inner_rubies",
-               "balance", "dome", "escape", "lever", "stalk",
-               "center_shaft"}
+SPHERE_ONLY = {"cage", "hoops", "cage_rubies", "lay", "inner",
+               "inner_rubies", "balance", "dome", "escape", "lever",
+               "stalk", "center_shaft"}

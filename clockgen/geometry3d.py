@@ -178,6 +178,36 @@ def sphere_panel(R, t, lat0, lat1, lon0=0.0, lon1=360.0, n_lat=10,
     return merge(mo, mi, *walls)
 
 
+def cyl_panel(R, t, z0, z1, lon0, lon1, n_lon=24, n_z=2):
+    """Thick cylindrical wall panel between longitudes (deg, 0 = +X)."""
+    lo = np.radians(np.linspace(lon0, lon1, n_lon))
+    zz = np.linspace(z0, z1, n_z)
+
+    def shell(rad):
+        P = np.empty((len(lo), len(zz), 3))
+        P[..., 0] = rad * np.cos(lo)[:, None]
+        P[..., 1] = rad * np.sin(lo)[:, None]
+        P[..., 2] = zz[None, :]
+        return P
+    Po, Pi = shell(R), shell(R - t)
+    mo = _grid_mesh(Po)
+    mi = _grid_mesh(Pi[:, ::-1])
+    walls = []
+    for j, flip in ((0, False), (len(zz) - 1, True)):
+        W = np.stack([Po[:, j], Pi[:, j]], axis=2).transpose(0, 2, 1)
+        w = _grid_mesh(W)
+        if flip:
+            w.invert()
+        walls.append(w)
+    for i, flip in ((0, True), (len(lo) - 1, False)):
+        W = np.stack([Po[i], Pi[i]], axis=1)
+        w = _grid_mesh(W)
+        if flip:
+            w.invert()
+        walls.append(w)
+    return merge(mo, mi, *walls)
+
+
 def sphere_arc(R, lat0, lat1, lon_deg, r_tube, n=40, n_tube=8):
     """Meridian rib: tube along a constant-longitude arc of a sphere."""
     la = np.radians(np.linspace(lat0, lat1, n))
