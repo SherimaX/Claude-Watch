@@ -18,6 +18,10 @@ filament used as pins/pivots, and optionally a strap.
   click. Roughly 3 usable mainspring turns ≈ a few hours of run time per wind
   (this is a printed spring — expect hours, not days).
 
+![movement running](docs/watch_animation.gif)
+
+![escapement animation](docs/escapement_animation.gif)
+
 ![assembled movement](docs/assembly_3d.png)
 
 > **Honesty note:** this is a v1 design produced and verified with a 2D
@@ -108,7 +112,10 @@ wheel advances exactly one tooth (18°) per balance oscillation.
 
 Diagnostics: `docs/layout.png` (wheel placement + clearances),
 `docs/escapement_sim.png` (lock/release behaviour), `docs/fork_sim.png`
-(fork, guard pin and safety-roller action).
+(fork, guard pin and safety-roller action). Animations of the movement
+running: `docs/watch_animation.gif` (3D) and
+`docs/escapement_animation.gif` (escapement close-up) — regenerate with
+`python -m watchgen.animate`.
 
 ## 4. Assembly
 
