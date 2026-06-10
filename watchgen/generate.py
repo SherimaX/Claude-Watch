@@ -57,6 +57,11 @@ PARTS = {
     "cannon_pinion":   (F.cannon_pinion, False),
     "minute_wheel":    (F.minute_wheel, False),
     "hour_wheel":      (F.hour_wheel, False),
+    "seconds_pinion":  (F.seconds_pinion, True),
+    "seconds_idler_a": (F.seconds_idler_a, True),
+    "seconds_idler_b": (F.seconds_idler_b, False),
+    "seconds_wheel":   (F.seconds_wheel, False),
+    "seconds_hand":    (F.seconds_hand, False),
     "dial":            (F.dial, True),
     "minute_hand":     (F.minute_hand, False),
     "hour_hand":       (F.hour_hand, False),
@@ -167,6 +172,28 @@ def run_checks():
     chk("fins clear CW flange", (P.KW_STEM_Z - fr) - P.Z_CW_FLANGE[1], 0.1)
     chk("fins clear setting disc", (P.KW_STEM_Z - fr) - P.Z_SET_DISC[1], 0.1)
     chk("ratchet vs cover", P.Z_RATCHET[0] - (-9.4), 0.5)
+
+    print("small seconds:")
+    W, IA, IB = P.P_SECONDS, P.P_SEC_IA, P.P_SEC_IB
+    sec_tip = 0.7 * (P.SEC_W_T / 2 + 1)
+    chk("seconds wheel inside plate", P.PLATE_R - (_d(W, (0, 0)) + sec_tip), 0.3)
+    chk("seconds wheel vs balance arbor", _d(W, P.P_BALANCE) - sec_tip - 1.5, 0.4)
+    chk("seconds wheel vs pillar@-18",
+        _d(W, P.PILLAR_R * np.array([np.cos(np.radians(-18)),
+                                     np.sin(np.radians(-18))]))
+        - sec_tip - P.PILLAR_RAD, 0.3)
+    chk("idler B vs escape arbor pin",
+        _d(IB, P.P_ESCAPE) - 0.7 * (P.SEC_IB_T / 2 + 1) - 1.0, 0.4)
+    chk("idler A wheel vs escape pin",
+        _d(IA, P.P_ESCAPE) - 0.7 * (P.SEC_IA_W_T / 2 + 1) - 1.0, 0.4)
+    chk("idler A vs roller (plan)", _d(IA, P.P_BALANCE) - 5.95 - P.ROLLER_MAIN_R, 0.4)
+    chk("hour hand clears seconds sweep",
+        (_d(W, (0, 0)) - 5.0) - 21.5, 0.5)
+    for nm, az, bz in (("esc pin2/idler A wheel", P.Z_SEC_PIN2, P.Z_SEC_IA_W),
+                       ("idler A pinion/idler B", P.Z_SEC_IA_P, P.Z_SEC_IB),
+                       ("idler B/seconds wheel", P.Z_SEC_IB, P.Z_SEC_W)):
+        o = min(az[1], bz[1]) - max(az[0], bz[0])
+        chk(f"z-mesh {nm}", o, 1.0)
     # parked pinion strip (x +/-2.5, y +/-w/2) vs the OTHER wheel's bar
     # annulus (outer 5.4): corner distance must exceed bar reach
     halfw = P.KW_PINION_W / 2 + 0.2

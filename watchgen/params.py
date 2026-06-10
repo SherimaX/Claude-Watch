@@ -177,6 +177,26 @@ Z_SET_BARS = (-9.2, -2.7)
 KW_FLANGE_R = 5.3
 Z_SET_PINION = (17.4, 19.6)  # setting shaft top pinion
 
+# ------------------------------------------------------- small seconds
+# The escape arbor turns once per 100/6 s.  A 10T pinion pressed onto it
+# drives idler A (15T wheel + 10T pinion), then plain idler B (14T, for
+# clockwise rotation), then the 24T seconds wheel:
+# (10/15)*(10/24) = 1/3.6  ->  exactly 60 s per revolution.
+SEC_PIN2_T = 10
+SEC_IA_W_T, SEC_IA_P_T = 15, 10
+SEC_IB_T = 14
+SEC_W_T = 24
+P_SEC_IA = P_ESCAPE + _pol(MODULE * (SEC_PIN2_T + SEC_IA_W_T) / 2, 57.7)
+P_SEC_IB = P_SEC_IA + _pol(MODULE * (SEC_IA_P_T + SEC_IB_T) / 2, 165.5)
+P_SECONDS = P_SEC_IB + _pol(MODULE * (SEC_IB_T + SEC_W_T) / 2, 30.0)
+Z_SEC_HUB  = (9.9, 11.4)     # spacer hub of the escape-arbor pinion
+Z_SEC_PIN2 = (11.4, 13.0)
+Z_SEC_IA_W = (11.6, 12.8)
+Z_SEC_IA_P = (12.9, 14.2)
+Z_SEC_IB   = (13.0, 14.2)
+Z_SEC_W    = (13.0, 14.2)
+SEC_TIP_Z = 25.6             # seconds arbor tip (hand seat 24.7..25.3)
+
 # ---------------------------------------------------------------- barrel
 DRUM_OR = 14.2
 DRUM_IR = 12.5

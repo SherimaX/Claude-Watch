@@ -277,7 +277,21 @@ def animate_full(path="docs/watch_full_animation.gif"):
         "cannon": (at(F.cannon_pinion(), (0, 0)), "#8a5c5c", 1.0, (0, 0)),
         "minhand": (hands_min, "#101010", 1.0, (0, 0)),
         "hrhand": (hands_hr, "#28404f", 1.0, (0, 0)),
+        "secpin2": (at(F.seconds_pinion(), P.P_ESCAPE), "#cc3366", 1.0,
+                    P.P_ESCAPE),
+        "secia": (at(F.seconds_idler_a(), P.P_SEC_IA), "#999999", 1.0,
+                  P.P_SEC_IA),
+        "secib": (at(F.seconds_idler_b(), P.P_SEC_IB), "#999999", 1.0,
+                  P.P_SEC_IB),
+        "secwheel": (at(F.seconds_wheel(), P.P_SECONDS), "#777788", 1.0,
+                     P.P_SECONDS),
+        "sechand": (_sechand(), "#aa2020", 1.0, P.P_SECONDS),
     }
+    def _sechand():
+        m = F.seconds_hand()
+        m.apply_translation([P.P_SECONDS[0], P.P_SECONDS[1], 24.7])
+        return m
+
     stem_base, crown_base = F.stem(), F.crown()
 
     # ---------------- timeline -----------------------------------------
@@ -343,6 +357,11 @@ def animate_full(path="docs/watch_full_animation.gif"):
             "minhand": -minute[k] + 180.0,
             "hourw": -minute[k] / 12.0 + 180.0,
             "hrhand": -minute[k] / 12.0 + 180.0,
+            "secpin2": th_esc[k],
+            "secia": -th_esc[k] * 10.0 / 15.0,
+            "secib": th_esc[k] * 10.0 / 15.0 * 10.0 / 14.0,
+            "secwheel": -th_esc[k] / 3.6 - 90.0,
+            "sechand": -th_esc[k] / 3.6 - 90.0,
         }
         fig = plt.figure(figsize=(7.0, 6.6))
         ax = fig.add_subplot(111, projection="3d")

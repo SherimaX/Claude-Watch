@@ -13,8 +13,10 @@ filament used as pins/pivots, and optionally a strap.
   (Roskopf-type) lever escapement → balance wheel with printed hairspring.
 * **Beat:** 1.2 Hz nominal (2.4 ticks/s), tunable with rim weights and three
   hairspring stiffness variants.
-* **Indication:** hours + minutes (12:1 printed motion works), friction-set
-  by turning the minute hand.
+* **Indication:** hours + minutes (12:1 printed motion works) plus a
+  **small-seconds sub-dial at 6 o'clock** — the escape arbor turns once
+  per 100/6 s, and a 10:15 + 10:24 gear chain (with one idler so it runs
+  clockwise) multiplies that by exactly 3.6 → 60.000 s per revolution.
 * **Winding & setting:** a real crown, like a wristwatch. Pushed in, the
   stem pinion engages a lantern crown wheel that drives the ratchet wheel
   (click holds the charge). Pulled out ~6.5 mm, the same pinion engages a
@@ -43,7 +45,7 @@ crown to set the hands — all driven by the real part geometry.*
 
 ---
 
-## 1. What to print (36 STLs in `stl/`)
+## 1. What to print (41 STLs in `stl/`)
 
 All STLs are already oriented for printing (largest flat face down).
 **No supports are needed for any part.**
@@ -66,6 +68,7 @@ All STLs are already oriented for printing (largest flat face down).
 | `hairspring` + `_soft` + `_stiff` | 1 ea | **PETG** | 0.12 | print all three, slow & cool |
 | `cannon_pinion`, `minute_wheel`, `hour_wheel` | 1 ea | PLA | 0.12–0.16 | |
 | `dial`, `minute_hand`, `hour_hand` | 1 ea | PLA | 0.16 | contrast colour! |
+| `seconds_pinion`, `seconds_idler_a`, `seconds_idler_b`, `seconds_wheel`, `seconds_hand` | 1 ea | PLA | 0.12 | seconds_wheel prints standing on its gear |
 | `case_ring`, `case_back` | 1 ea | PLA/PETG | 0.2 | case_ring prints upright, small internal bridges |
 
 General settings: 0.4 mm nozzle, 100 % infill for everything smaller than the
@@ -100,6 +103,7 @@ springs (≤ 40 mm/s outer walls). PETG where marked — the springs rely on it
 | Click pivot + click spring abutment ×2 | 9 mm | press into back plate from the back (the click sits deep, at the ratchet level) |
 | Crown-wheel stud ×1 | 9 mm | press into back plate from the back; the crown wheel spins on it |
 | Minute-wheel stud ×1 | 8 mm | press into front plate from the front |
+| Seconds idler studs ×2 | 7 mm + 5 mm | press into front plate from below (train side); idlers A and B spin on them |
 
 Cut pins square with a sharp blade; chamfer the ends with sandpaper. Where a
 pin runs in a 2.0 mm plate hole, the hole may need a quick pass with a 1.8 mm
@@ -117,6 +121,9 @@ mainspring barrel (48T) ─ 6:1 ─ center wheel/arbor (48T, 1 rev/h, carries ha
 
    crown (pushed) → stem pinion → crown wheel (lantern + 12T) → ratchet 18T → winds barrel arbor
    crown (pulled) → stem pinion → setting wheel (lantern) → shaft → 12T pinion → minute wheel → hands
+
+   escape arbor (100/6 s/rev) → 10T pinion → idler A (15T+10T) → idler B (14T) → seconds wheel 24T
+                                                            = exactly 60 s/rev, clockwise (sub-dial at 6)
 ```
 
 The keyless works use "lantern" crown gears: rings of eight vertical
@@ -223,8 +230,9 @@ add a *tiny* drop of CA glue only where stated.
 3. **Hour_wheel** pipe over the cannon pipe (its gear meshes the minute
    pinion).
 4. **Dial** onto the four post pegs (pegs through the dial holes, glue).
-5. Press **hour_hand** onto the hour pipe, **minute_hand** onto the cannon
-   tip, both pointing at 12.
+5. Press the **seconds_hand** onto the seconds-arbor tip poking through
+   the sub-dial, then **hour_hand** onto the hour pipe and **minute_hand**
+   onto the cannon tip, both pointing at 12.
 6. Time is set from the crown once cased (the setting wheel drives the
    minute wheel, slipping the cannon on the arbor). Before casing you can
    also simply turn the minute hand.

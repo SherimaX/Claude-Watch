@@ -85,6 +85,9 @@ def front_plate():
         (P.P_BALANCE, P.BAL_PIVOT_D + 0.4),
         (P.P_MINUTE, P.PIN_HOLE_PRESS),
         (P.KW_SETTING, 3.4),
+        (P.P_SECONDS, 3.4),          # seconds-arbor bearing
+        (P.P_SEC_IA, P.PIN_HOLE_PRESS),
+        (P.P_SEC_IB, P.PIN_HOLE_PRESS),
     ]
     for a in P.PILLAR_ANGLES:
         c = P.PILLAR_R * np.array([np.cos(np.radians(a)),
@@ -169,19 +172,25 @@ def hour_wheel():
 # ------------------------------------------------------------- dial, hands
 def dial():
     d = circle(38.5, n=200).difference(circle(3.8))
+    d = d.difference(circle(1.9, _pt(P.P_SECONDS)))    # seconds arbor
     for a in P.DIAL_FEET_ANGLES:
         c = P.DIAL_FEET_R * np.array([np.cos(np.radians(a)),
                                       np.sin(np.radians(a))])
         d = d.difference(circle(1.0, _pt(c)))
     m = extrude(d, P.DIAL_T, P.DIAL_Z)
-    # raised batons
+    # raised batons (the 6 o'clock baton yields to the seconds sub-dial)
     for i in range(12):
+        if i == 6:
+            continue
         a = np.radians(180 - i * 30)   # 12 at -X: crown = 3 o'clock
         L = 5.0 if i % 3 else 7.0
         c = (34.5 - L / 2) * np.array([np.cos(a), np.sin(a)])
         bat = sa.rotate(rect(L, 1.8 if i % 3 else 2.4, c=_pt(c)),
                         np.degrees(a), origin=_pt(c))
         m = stack(m, extrude(bat, 0.6, P.DIAL_Z + P.DIAL_T))
+    # small-seconds chapter ring
+    m = stack(m, extrude(ring(6.2, 5.5, _pt(P.P_SECONDS)), 0.25,
+                         P.DIAL_Z + P.DIAL_T))
     return m
 
 
@@ -200,7 +209,7 @@ def minute_hand():
 
 def hour_hand():
     # short, broad blade so it reads clearly against the dial
-    return extrude(_hand(24.0, 7.0, 6.8, 9.8, w_root=2.1, w_tip=0.9),
+    return extrude(_hand(21.5, 7.0, 6.8, 9.8, w_root=2.1, w_tip=0.9),
                    1.2, 0.0)
 
 
@@ -353,3 +362,47 @@ def crown_tube():
     m = stack(m, extrude(circle(4.5).difference(circle(2.3)), 1.5, 8.2))
     m = stack(m, extrude(rect(11.0, 11.0).difference(circle(3.4)), 1.6, 0.0))
     return m
+
+
+# ------------------------------------------------------------ small seconds
+def seconds_pinion():
+    """10T pinion + spacer hub, pressed onto the escape-wheel arbor pin
+    above the escape wheel; drives the small-seconds chain."""
+    g = gear_outline(P.MODULE, P.SEC_PIN2_T, 0.3, backlash=P.BACKLASH)
+    m = zspan(g.difference(circle(P.PIN_HOLE_PRESS / 2)), P.Z_SEC_PIN2)
+    hub = circle(2.2).difference(circle(P.PIN_HOLE_PRESS / 2))
+    m = stack(m, zspan(hub, P.Z_SEC_HUB))
+    return m
+
+
+def seconds_idler_a():
+    """15T wheel + 10T pinion, runs on a stud pin under the front plate."""
+    w = gear_outline(P.MODULE, P.SEC_IA_W_T, 0.0, backlash=P.BACKLASH)
+    m = zspan(w.difference(circle(P.PIN_HOLE_BEAR / 2)), P.Z_SEC_IA_W)
+    pin = gear_outline(P.MODULE, P.SEC_IA_P_T, 0.3, backlash=P.BACKLASH)
+    m = stack(m, zspan(pin.difference(circle(P.PIN_HOLE_BEAR / 2)),
+                       P.Z_SEC_IA_P))
+    return m
+
+
+def seconds_idler_b():
+    """Plain 14T idler (makes the seconds hand turn clockwise)."""
+    g = gear_outline(P.MODULE, P.SEC_IB_T, 0.0, backlash=P.BACKLASH)
+    return zspan(g.difference(circle(P.PIN_HOLE_BEAR / 2)), P.Z_SEC_IB)
+
+
+def seconds_wheel():
+    """24T wheel + arbor up through the front plate and dial; the
+    seconds hand presses onto the 2.1 mm tip. 60 s per revolution."""
+    g = gear_outline(P.MODULE, P.SEC_W_T, 0.0, backlash=P.BACKLASH)
+    m = zspan(g, P.Z_SEC_W)
+    m = stack(m, extrude(circle(1.5), 24.0 - P.Z_SEC_W[1], P.Z_SEC_W[1]))
+    m = stack(m, extrude(circle(1.05), P.SEC_TIP_Z - 24.0, 24.0))
+    return m
+
+
+def seconds_hand():
+    h = ring(2.5, 1.0)
+    blade = poly([(2.0, 0.55), (5.0, 0.3), (5.0, -0.3), (2.0, -0.55)])
+    tail = poly([(-2.0, 0.45), (-2.5, 0.3), (-2.5, -0.3), (-2.0, -0.45)])
+    return extrude(union(h, blade, tail), 0.6, 0.0)
