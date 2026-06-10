@@ -5,18 +5,28 @@ ordinary 0.4 mm-nozzle FDM printer. Every functional part is printed; the only
 non-printed items are a handful of M3 screws, a few centimetres of 1.75 mm
 filament used as pins/pivots, and optionally a strap.
 
-* **Case diameter:** 86 mm (movement Ø80) — oversized on purpose so FDM
+* **Case diameter:** 88.6 mm (movement Ø80) — oversized on purpose so FDM
   tolerances don't kill it. It wears like a chunky pocket-watch on a 24 mm
-  NATO-style strap (~40 mm thick).
+  NATO-style strap (~40 mm thick). The crown sits at the wrist 3-o'clock
+  position (the lugs are rotated 90° from the movement's barrel axis).
 * **Movement:** going barrel → 3-stage 216:1 train → 20-tooth pin-pallet
   (Roskopf-type) lever escapement → balance wheel with printed hairspring.
 * **Beat:** 1.2 Hz nominal (2.4 ticks/s), tunable with rim weights and three
   hairspring stiffness variants.
 * **Indication:** hours + minutes (12:1 printed motion works), friction-set
   by turning the minute hand.
-* **Winding:** square arbor + printed key through the case back, ratchet +
-  click. Roughly 3 usable mainspring turns ≈ a few hours of run time per wind
-  (this is a printed spring — expect hours, not days).
+* **Winding & setting:** a real crown, like a wristwatch. Pushed in, the
+  stem pinion engages a lantern crown wheel that drives the ratchet wheel
+  (click holds the charge). Pulled out ~6.5 mm, the same pinion engages a
+  setting wheel whose shaft runs up through the movement to the minute
+  wheel — turning the crown then sets the hands through the slipping
+  cannon pinion. Roughly 3 usable mainspring turns ≈ a few hours of run
+  time per wind (printed spring — expect hours, not days).
+
+![full sequence: running, winding, setting](docs/watch_full_animation.gif)
+
+*Full sequence: running (time-lapse), winding at the crown, then pull-out
+crown to set the hands — all driven by the real part geometry.*
 
 ![movement running](docs/watch_animation.gif)
 
@@ -33,7 +43,7 @@ filament used as pins/pivots, and optionally a strap.
 
 ---
 
-## 1. What to print (32 STLs in `stl/`)
+## 1. What to print (36 STLs in `stl/`)
 
 All STLs are already oriented for printing (largest flat face down).
 **No supports are needed for any part.**
@@ -47,7 +57,9 @@ All STLs are already oriented for printing (largest flat face down).
 | `center_arbor`, `balance_arbor`, `barrel_arbor` | 1 ea | PETG | 0.12 | printed standing; brim ON |
 | `barrel_drum`, `barrel_lid` | 1 ea | PLA | 0.2 | |
 | `mainspring` (1.3 mm) / `mainspring_strong` (1.6 mm) | 1 | **PETG** | 0.2 | print BOTH, start with regular |
-| `ratchet_wheel`, `click`, `winding_key` | 1 ea | PLA/PETG | 0.16 | click needs PETG (spring arm) |
+| `ratchet_wheel`, `click` | 1 ea | PLA/PETG | 0.16 | click needs PETG (spring arm) |
+| `crown_wheel`, `setting_shaft` | 1 ea | PLA | 0.12 | lantern bars print standing |
+| `stem`, `crown`, `crown_tube` | 1 ea | PETG | 0.12 | stem prints standing on the pinion |
 | `lever` | 1 | PLA | 0.12 | tiny — print 2–3 spares |
 | `roller_main`, `roller_safety` | 1 ea | PLA | 0.12 | spares recommended |
 | `balance_wheel` | 1 | PLA | 0.16 | |
@@ -85,7 +97,8 @@ springs (≤ 40 mm/s outer walls). PETG where marked — the springs rely on it
 | Pallet pins ×2 | 3.6 mm | glue into the two small lever holes, flush with lever top |
 | Impulse pin ×1 | 3 mm | glue into roller_main hole, flush with disc top |
 | Hairspring stud ×1 | 4 mm | glue into balance-cock stud hole, sticking up |
-| Click pivot + click spring abutment ×2 | 6 mm | press into back plate from the back |
+| Click pivot + click spring abutment ×2 | 9 mm | press into back plate from the back (the click sits deep, at the ratchet level) |
+| Crown-wheel stud ×1 | 9 mm | press into back plate from the back; the crown wheel spins on it |
 | Minute-wheel stud ×1 | 8 mm | press into front plate from the front |
 
 Cut pins square with a sharp blade; chamfer the ends with sandpaper. Where a
@@ -101,7 +114,16 @@ mainspring barrel (48T) ─ 6:1 ─ center wheel/arbor (48T, 1 rev/h, carries ha
    escape wheel ⇄ pallet pins on lever ⇄ fork ⇄ impulse pin ⇄ balance (1.2 Hz)
    center arbor → cannon pinion (friction) → minute hand
    cannon 12T → minute wheel 48T → minute pinion 15T → hour wheel 45T (12:1) → hour hand
+
+   crown (pushed) → stem pinion → crown wheel (lantern + 12T) → ratchet 18T → winds barrel arbor
+   crown (pulled) → stem pinion → setting wheel (lantern) → shaft → 12T pinion → minute wheel → hands
 ```
+
+The keyless works use "lantern" crown gears: rings of eight vertical
+1.8 mm bars engaged by the six-finned stem pinion — a right-angle drive
+that prints reliably (`docs/keyless.png` shows the layout and section).
+The stem slides 6.5 mm in the crown tube between the two rings; its
+flange inside the tube limits the travel.
 
 The escapement is a pin-pallet (Roskopf) lever escapement: two vertical
 filament pins on the lever alternately stop the escape-wheel teeth; the
@@ -113,9 +135,10 @@ wheel advances exactly one tooth (18°) per balance oscillation.
 Diagnostics: `docs/layout.png` (wheel placement + clearances),
 `docs/escapement_sim.png` (lock/release behaviour), `docs/fork_sim.png`
 (fork, guard pin and safety-roller action). Animations of the movement
-running: `docs/watch_animation.gif` (3D) and
+running: `docs/watch_full_animation.gif` (running + winding + setting
+sequence), `docs/watch_animation.gif` (movement 3D) and
 `docs/escapement_animation.gif` (escapement close-up) — regenerate with
-`python -m watchgen.animate`.
+`python -m watchgen.animate [full|3d|esc]`.
 
 ## 4. Assembly
 
@@ -128,8 +151,9 @@ add a *tiny* drop of CA glue only where stated.
 2. Press the 19 mm **lever stud** into the back plate's lever hole (the small
    1.6 mm hole between the escape-wheel hole and the balance hole) so it
    stands up on the train side. Glue from the back.
-3. Press the two 6 mm **click pins** into the two small holes near the barrel
-   hole, sticking out of the *back* face.
+3. Press the two 9 mm **click pins** and the 9 mm **crown-wheel stud** into
+   their small holes (left of and above the barrel hole), sticking out of
+   the *back* face.
 4. Press the 8 mm **minute-wheel stud** into the front plate's small hole
    (21 mm from centre), sticking out of the *front* face.
 
@@ -165,13 +189,20 @@ add a *tiny* drop of CA glue only where stated.
    pillars — snug, NOT tight. Everything must spin freely; loosen and re-seat
    if not. Spin the escape wheel backwards gently: the train should whirr.
 
-### D. Back side
-1. **Ratchet_wheel** onto the winding square behind the back plate, M3×8 into
-   the arbor's end hole to retain it.
-2. **Click** over its pivot pin, beak into the ratchet teeth, spring arm bent
-   against the abutment pin. Wind a little with the key: it must click
-   forward and hold back. (If your spring was printed mirrored, flip the
-   click over.)
+### D. Back side (ratchet, click, keyless works)
+1. **Ratchet_wheel** onto the winding square behind the back plate (it sits
+   deep, close to where the case back will be), M3×8 into the arbor's end
+   hole to retain it.
+2. **Crown_wheel** onto its stud: lantern bars point *up* toward the plate
+   pocket, the 12T gear at the bottom meshing the ratchet. A tiny CA-glued
+   filament washer on the stud tip retains it.
+3. **Setting_shaft** up through its plate hole (the long shaft with the
+   lantern disc at the bottom and the 12T pinion at the top, which meshes
+   the minute wheel on the front side once the motion works are on).
+4. **Click** over its pivot pin, beak into the ratchet teeth, spring arm
+   bent against the abutment pin. Turn the crown wheel by hand: the ratchet
+   must click forward and hold back. (If your print came out mirrored,
+   flip the click over.)
 3. **Hairspring** onto the balance arbor's lower square (it sits above the
    balance), **balance_wheel** onto the square below it. Glue the 4 mm
    **stud pin** into the balance-cock stud hole. Hook the hairspring's outer
@@ -194,21 +225,31 @@ add a *tiny* drop of CA glue only where stated.
 4. **Dial** onto the four post pegs (pegs through the dial holes, glue).
 5. Press **hour_hand** onto the hour pipe, **minute_hand** onto the cannon
    tip, both pointing at 12.
-6. To set time: turn the minute hand clockwise (the cannon slips on the
-   arbor).
+6. Time is set from the crown once cased (the setting wheel drives the
+   minute wheel, slipping the cannon on the arbor). Before casing you can
+   also simply turn the minute hand.
 
-### F. Case
-1. Slide the movement into the **case_ring** from the back until the front
-   plate seats against the internal shoulder. (Optional acrylic crystal goes
-   into the bezel recess first.)
-2. **Case_back** on with 3 × M3×8 into the wall bosses — the round window
-   shows the balance; the small hole lines up with the winding square.
-3. Thread a 24 mm strap through the lug slots.
+### F. Case, stem and crown
+1. Glue the **crown_tube** into the rectangular slot in the case wall
+   (flange on the inside, counterbore facing out).
+2. Slide the movement into the **case_ring** from the back until the front
+   plate seats against the internal shoulder, with the stem slot at the
+   movement's barrel side (12 o'clock of the movement = 3 o'clock of the
+   case). (Optional acrylic crystal goes into the bezel recess first.)
+3. Feed the **stem** through the crown tube from the inside (pinion inward,
+   flange entering the tube's counterbore), then glue the **crown** onto
+   the stem's square from outside.
+4. **Case_back** on with 3 × M3×8 into the wall bosses — the round window
+   shows the balance; the small recess clears the setting wheel.
+5. Thread a 24 mm strap through the lug slots.
 
 ### G. First run
-1. Wind 5–10 clicks with the **winding_key** through the case-back hole.
-2. Give the balance a twist. It should keep ticking. If it doesn't, see
-   below — *every* printed watch needs fettling on the first build.
+1. Push the crown in and wind 10–20 turns. You should hear the click.
+2. Give the balance a twist through the case-back window. It should keep
+   ticking. If it doesn't, see below — *every* printed watch needs
+   fettling on the first build.
+3. Pull the crown out until the flange stops (~6.5 mm) and turn to set the
+   hands; push it back in to wind/run.
 
 ## 5. Tuning & troubleshooting
 
@@ -221,7 +262,9 @@ add a *tiny* drop of CA glue only where stated.
 | Runs fast | Add rim screws/nuts (heavier balance = slower), or swap to `hairspring_soft` |
 | Runs slow / stops with all weights | Remove rim weights or swap to `hairspring_stiff` |
 | Hands don't move though it ticks | Cannon pinion slipping: pinch its slotted section, or thicken the arbor tip with a layer of CA glue |
-| Winding slips | Check click spring engagement; ratchet teeth direction must oppose the spring's pull |
+| Winding slips | Check click spring engagement and that the crown-wheel gear meshes the ratchet |
+| Crown turns but nothing happens | Stem pinion not reaching the lantern bars: check the stem is pushed fully home (wind) or pulled to the stop (set); deepen the case-wall slot so the tube sits flush |
+| Hands don't move when setting | Setting-shaft top pinion must mesh the minute wheel — check the shaft is fully seated in both plate holes |
 | Mainspring slips at full wind | Deepen/clean the drum wall slot so the outer tab hooks firmly |
 
 Rate maths: 1.2 Hz nominal. Time 20 oscillations with a stopwatch — should

@@ -61,12 +61,12 @@ P_FOURTH = P_THIRD + _pol(MESH_DIST, -34.0)
 P_ESCAPE = P_FOURTH + _pol(MESH_DIST, 15.0)
 P_LEVER  = P_ESCAPE + _pol(LEVER_D, 90.0)
 P_BALANCE = P_LEVER + _pol(LB_DIST, 80.0)
-P_MINUTE = _pol(21.0, 165.0)          # minute-wheel stud (front side)
+P_MINUTE = _pol(21.0, 128.4)          # minute-wheel stud (front side)
 
 PILLAR_ANGLES = [60.0, 150.0, 240.0, -18.0]
 PILLAR_R = 37.0
 PILLAR_RAD = 3.0
-DIAL_FEET_ANGLES = [30.0, 120.0, 210.0, 300.0]
+DIAL_FEET_ANGLES = [30.0, 170.0, 210.0, 300.0]
 DIAL_FEET_R = 33.0
 
 PLATE_R = 40.0
@@ -102,7 +102,7 @@ DIAL_Z      = 23.2
 DIAL_T      = 1.2
 CANNON_PIPE_TOP = 28.0
 # back side
-Z_RATCHET   = (-5.6, -3.4)
+Z_RATCHET   = (-8.8, -7.8)   # deep: meshes the crown wheel spur
 Z_BAL_RIM   = (-5.2, -3.4)
 Z_HSPRING   = (-7.4, -5.6)
 Z_COCK      = (-10.0, -7.8)
@@ -141,20 +141,54 @@ MINUTE_P_T = 15
 HOUR_W_T = 45
 MW_DIST = MODULE * (CANNON_T + MINUTE_W_T) / 2.0     # 21.0 both meshes
 
+# ----------------------------------------------------- keyless works
+# Crown at movement +Y (wrist "3 o'clock"; lugs are on +/-X).  Stem axis:
+# x=0, z=KW_STEM_Z, along Y.  The stem pinion (6 fins) engages lantern
+# bar-rings: pushed -> crown wheel (12T spur -> ratchet = winding);
+# pulled 7 mm -> setting wheel (shaft up to a 12T pinion -> minute wheel).
+KW_STEM_Z = -4.5
+KW_STEM_D = 4.0
+KW_PINION_FINS = 6
+KW_PINION_OD = 5.0       # fin tip diameter (core 2.8)
+KW_PINION_W = 2.0
+KW_BAR_R = 4.5           # lantern bar ring radius
+KW_BARS = 8
+KW_BAR_D = 1.8
+KW_CW_SPUR_T = 12        # crown wheel deep spur (meshes ratchet, m=0.7)
+                         # mesh dist 0.35*(12+18) = 10.5
+KW_CROWN_WHEEL = np.array([KW_BAR_R,
+                           19.6 + np.sqrt(10.5 ** 2 - KW_BAR_R ** 2)])
+KW_SETTING = np.array([-KW_BAR_R, 35.65])
+KW_SET_PIN_T = 12
+KW_PUSH_Y = float(KW_CROWN_WHEEL[1])     # pinion centre, pushed (29.09)
+KW_PULL_Y = float(KW_SETTING[1])         # pinion centre, pulled (36.09)
+KW_TRAVEL = KW_PULL_Y - KW_PUSH_Y        # 7.0
+POCKET_FLOOR = -1.7      # back-plate thinned over the keyless works
+# z-bands (back side, negative z).  The two lantern wheels are fully
+# z-separated: crown wheel anchors on its deep spur, the setting wheel's
+# anchor disc sits one level lower, inside a recess in the case back.
+Z_CW_SPUR  = (-8.8, -7.8)    # crown wheel deep gear (meshes ratchet)
+Z_CW_FLANGE = (-7.8, -7.35)  # bar anchor flange (r=5.3)
+Z_BARS     = (-7.35, -2.7)   # crown-wheel lantern bars
+Z_SET_DISC = (-9.9, -9.2)    # setting anchor disc (in case-back recess)
+Z_SET_BARS = (-9.2, -2.7)
+KW_FLANGE_R = 5.3
+Z_SET_PINION = (17.4, 19.6)  # setting shaft top pinion
+
 # ---------------------------------------------------------------- barrel
-DRUM_OR = 15.0
-DRUM_IR = 13.2
+DRUM_OR = 14.2
+DRUM_IR = 12.5
 ARBOR_CORE_R = 3.5
 MS_BAND = 1.3
 MS_H = 5.2
 BARREL_ARBOR_BEAR_D = 5.0
 BARREL_SQ = 4.0
-RATCHET_T = 16
-RATCHET_R = 6.8
+RATCHET_T = 18        # now a m=0.7 spur gear (driven by crown wheel,
+RATCHET_R = 6.65      # held by the click); tip radius
 
 # ---------------------------------------------------------------- case
-CASE_ID = 81.0
-CASE_OD = 86.0
+CASE_ID = 83.6
+CASE_OD = 88.6
 LUG_W = 24.0
 
 TOL = 0.25

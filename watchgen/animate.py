@@ -227,9 +227,171 @@ def _save_gif(frames, path):
           f"{len(frames)} frames)")
 
 
+
+
+# ----------------------------------------------------------- full sequence
+def animate_full(path="docs/watch_full_animation.gif"):
+    """Running -> winding (crown) -> pull crown & set hands -> push back."""
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+    from . import parts_frame as PF
+    print("building meshes...")
+    Z_MIN_HAND, Z_HR_HAND = 26.6, 24.9
+
+    def at(m, p):
+        m.apply_translation([p[0], p[1], 0]); return m
+
+    hands_min = at(F.minute_hand().apply_translation([0, 0, Z_MIN_HAND])
+                   if False else F.minute_hand(), (0, 0))
+    hands_min.apply_translation([0, 0, Z_MIN_HAND])
+    hands_hr = F.hour_hand(); hands_hr.apply_translation([0, 0, Z_HR_HAND])
+
+    static = [
+        (F.back_plate(), "#90a0b0", 0.20),
+        (F.front_plate(), "#90a0b0", 0.14),
+        (F.case_ring(), "#aab4be", 0.10),
+        (F.case_back(), "#aab4be", 0.12),
+        (F.balance_cock(), "#557755", 0.40),
+        (at(T.barrel_drum(), P.P_BARREL), "#b89030", 0.85),
+        (F.dial(), "#f5f0e6", 0.42),
+    ]
+    moving_base = {
+        "center": (at(T.center_wheel(), (0, 0)), "#cc6633", 1.0, (0, 0)),
+        "arbor":  (at(T.center_arbor(), (0, 0)), "#cc6633", 1.0, (0, 0)),
+        "third":  (at(T.third_wheel(), P.P_THIRD), "#33aa66", 1.0, P.P_THIRD),
+        "fourth": (at(T.fourth_wheel(), P.P_FOURTH), "#3366cc", 1.0, P.P_FOURTH),
+        "escape": (at(T.escape_wheel(), P.P_ESCAPE), "#cc3366", 1.0, P.P_ESCAPE),
+        "lever":  (T.lever(), "#dd2222", 1.0, P.P_LEVER),
+        "roller": (at(T.roller_main(), P.P_BALANCE), "#9933cc", 1.0, P.P_BALANCE),
+        "balance": (at(T.balance_wheel(), P.P_BALANCE), "#505860", 1.0, P.P_BALANCE),
+        "ratchet": (at(T.ratchet_wheel(), P.P_BARREL), "#b89030", 1.0, P.P_BARREL),
+        "click":  (at(_rotz(T.click(), PF.click_geo()[1]),
+                      PF.click_geo()[0]), "#888888", 1.0,
+                   PF.click_geo()[0]),
+        "crownw": (at(F.crown_wheel(), P.KW_CROWN_WHEEL), "#d4a017", 1.0,
+                   P.KW_CROWN_WHEEL),
+        "setshaft": (at(F.setting_shaft(), P.KW_SETTING), "#7a5cc4", 1.0,
+                     P.KW_SETTING),
+        "minutew": (at(F.minute_wheel(), P.P_MINUTE), "#5c8a8a", 1.0,
+                    P.P_MINUTE),
+        "hourw":  (at(F.hour_wheel(), (0, 0)), "#8a5c5c", 1.0, (0, 0)),
+        "cannon": (at(F.cannon_pinion(), (0, 0)), "#8a5c5c", 1.0, (0, 0)),
+        "minhand": (hands_min, "#202020", 1.0, (0, 0)),
+        "hrhand": (hands_hr, "#202020", 1.0, (0, 0)),
+    }
+    stem_base, crown_base = F.stem(), F.crown()
+
+    # ---------------- timeline -----------------------------------------
+    NA, NB, NC = 36, 36, 52
+    NT = NA + NB + NC
+    psi = np.zeros(NT); phi = np.zeros(NT); th_esc = np.zeros(NT)
+    minute = np.zeros(NT); stem_rot = np.zeros(NT); pull = np.zeros(NT)
+    cam = np.zeros((NT, 2)); label = [""] * NT
+    # balance ticks throughout (visualised ~1 osc / 8 frames)
+    tt = np.arange(NT)
+    psi = 40.0 * np.sin(2 * np.pi * tt / 8.0)
+    phi = np.clip(-psi * P.ROLLER_R_IP / P.FORK_LEN,
+                  -P.LEVER_SWING, P.LEVER_SWING)
+    beats = np.zeros(NT)
+    for i in range(1, NT):
+        beats[i] = beats[i - 1] + (
+            1 if (phi[i - 1] < 2.5 <= phi[i]) or
+                 (phi[i - 1] > -2.5 >= phi[i]) else 0)
+    th_esc = beats * 9.0
+    for k in range(NT):
+        if k < NA:                              # A: running, time-lapse
+            minute[k] = 360.0 * k / NA * 0.25   # 15 min sweep
+            cam[k] = (52, -55)
+            label[k] = "running (time-lapse)"
+        elif k < NA + NB:                       # B: winding
+            j = k - NA
+            minute[k] = minute[NA - 1]
+            stem_rot[k] = stem_rot[k - 1] + 40.0
+            cam[k] = (52 - 90 * min(j / 8.0, 1), -55 - 20 * min(j / 8.0, 1))
+            label[k] = "winding: turn crown (click holds the ratchet)"
+        else:                                   # C: pull & set, push back
+            j = k - NA - NB
+            cam[k] = (-38 + 68 * min(j / 10.0, 1), -75)
+            if j < 6:
+                pull[k] = P.KW_TRAVEL * j / 5.0
+                stem_rot[k] = stem_rot[k - 1]
+                minute[k] = minute[k - 1]
+                label[k] = "pull crown out ..."
+            elif j < NC - 6:
+                pull[k] = P.KW_TRAVEL
+                stem_rot[k] = stem_rot[k - 1] + 55.0
+                minute[k] = minute[k - 1] + 55.0 * 0.75
+                label[k] = "setting: crown drives the hands"
+            else:
+                pull[k] = P.KW_TRAVEL * (NC - 1 - j) / 5.0
+                stem_rot[k] = stem_rot[k - 1]
+                minute[k] = minute[k - 1]
+                label[k] = "push crown back in"
+
+    frames = []
+    for k in range(NT):
+        wind = stem_rot[k] if k < NA + NB else stem_rot[NA + NB - 1]
+        setr = stem_rot[k] - wind                  # setting-phase rotation
+        spin = {
+            "escape": th_esc[k], "fourth": -th_esc[k] / 6.0 + 3.75,
+            "lever": phi[k], "roller": psi[k], "balance": psi[k],
+            "ratchet": wind * (6.0 / 8.0) * (12.0 / 18.0),
+            "crownw": -wind * 6.0 / 8.0,
+            "setshaft": -setr * 6.0 / 8.0,
+            "minutew": setr * 6.0 / 8.0 * 12.0 / 48.0 + 7.5,
+            "cannon": -minute[k] + 180.0,
+            "minhand": -minute[k] + 180.0,
+            "hourw": -minute[k] / 12.0 + 180.0,
+            "hrhand": -minute[k] / 12.0 + 180.0,
+        }
+        fig = plt.figure(figsize=(7.0, 6.6))
+        ax = fig.add_subplot(111, projection="3d")
+        for m, col, al in static:
+            ax.add_collection3d(Poly3DCollection(
+                m.vertices[m.faces], alpha=al, facecolor=col,
+                edgecolor="none"))
+        for name, (m, col, al, ctr) in moving_base.items():
+            mm = m.copy()
+            if name in spin:
+                _rotz(mm, spin[name], ctr)
+            ax.add_collection3d(Poly3DCollection(
+                mm.vertices[mm.faces], alpha=al, facecolor=col,
+                edgecolor="none"))
+        hs = _at(hairspring_mesh(psi[k]), P.P_BALANCE)
+        ax.add_collection3d(Poly3DCollection(
+            hs.vertices[hs.faces], alpha=1.0, facecolor="#3344aa",
+            edgecolor="none"))
+        for part, col in ((F.stem_world(pull[k], stem_base), "#444444"),
+                          (F.crown_world(pull[k], crown_base), "#222222")):
+            part.apply_transform(trimesh.transformations.rotation_matrix(
+                np.radians(stem_rot[k]), [0, 1, 0],
+                [0, 0, P.KW_STEM_Z]))
+            ax.add_collection3d(Poly3DCollection(
+                part.vertices[part.faces], alpha=1.0, facecolor=col,
+                edgecolor="none"))
+        ax.set_xlim(-44, 44); ax.set_ylim(-40, 48); ax.set_zlim(-30, 44)
+        ax.set_box_aspect((1, 1, 74 / 88))
+        ax.view_init(elev=cam[k][0], azim=cam[k][1])
+        ax.set_axis_off()
+        ax.set_position([-0.18, -0.2, 1.36, 1.4])
+        fig.text(0.5, 0.04, label[k], ha="center", fontsize=11)
+        fig.canvas.draw()
+        frames.append(np.asarray(fig.canvas.buffer_rgba())[..., :3].copy())
+        plt.close(fig)
+        if k % 10 == 0:
+            print(f"  full frame {k+1}/{NT}")
+    stackmin = np.min(np.stack([f.min(axis=2) for f in frames]), axis=0)
+    ys, xs = np.where(stackmin < 250)
+    y0, y1 = max(ys.min() - 6, 0), ys.max() + 6
+    x0, x1 = max(xs.min() - 6, 0), xs.max() + 6
+    frames = [f[y0:y1, x0:x1] for f in frames]
+    _save_gif(frames, path)
+
+
 if __name__ == "__main__":
     which = sys.argv[1] if len(sys.argv) > 1 else "both"
     if which in ("esc", "both"):
         animate_escapement()
     if which in ("3d", "both"):
         animate_3d()
+    if which in ("full", "both"):
+        animate_full()

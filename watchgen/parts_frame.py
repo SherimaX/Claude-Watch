@@ -49,9 +49,18 @@ def back_plate():
     leg0 = P.P_BALANCE + 13.5 * u
     for s in (+1, -1):
         holes.append((leg0 + 4.5 * s * v, 2.5))
+    holes += [(P.KW_SETTING, 3.4),                 # setting-shaft bearing
+              (P.KW_CROWN_WHEEL, P.PIN_HOLE_PRESS)]  # crown-wheel stud
     for c, dia in holes:
         d = d.difference(circle(dia / 2, _pt(c)))
-    m = extrude(d, P.PLATE_T, -P.PLATE_T)
+    # pocket on the back face over the keyless works (stem pinion + face
+    # teeth need to reach above z=-3): thin the plate locally
+    pocket = circle(6.4, _pt(P.KW_CROWN_WHEEL)).union(
+        circle(6.4, _pt(P.KW_SETTING))).union(
+        rect(6.6, 15.0, c=(0.0, 33.0)))
+    m = extrude(d.difference(pocket), P.POCKET_FLOOR - (-P.PLATE_T),
+                -P.PLATE_T)
+    m = stack(m, extrude(d, 0.0 - P.POCKET_FLOOR, P.POCKET_FLOOR))
     # pillars with M3 pilot holes
     for a in P.PILLAR_ANGLES:
         c = P.PILLAR_R * np.array([np.cos(np.radians(a)),
@@ -75,6 +84,7 @@ def front_plate():
         (P.P_LEVER, 1.8),
         (P.P_BALANCE, P.BAL_PIVOT_D + 0.4),
         (P.P_MINUTE, P.PIN_HOLE_PRESS),
+        (P.KW_SETTING, 3.4),
     ]
     for a in P.PILLAR_ANGLES:
         c = P.PILLAR_R * np.array([np.cos(np.radians(a)),
@@ -166,7 +176,7 @@ def dial():
     m = extrude(d, P.DIAL_T, P.DIAL_Z)
     # raised batons
     for i in range(12):
-        a = np.radians(90 - i * 30)
+        a = np.radians(180 - i * 30)   # 12 at -X: crown = 3 o'clock
         L = 5.0 if i % 3 else 7.0
         c = (34.5 - L / 2) * np.array([np.cos(a), np.sin(a)])
         bat = sa.rotate(rect(L, 1.8 if i % 3 else 2.4, c=_pt(c)),
@@ -199,12 +209,22 @@ CASE_BOSS_ANGLES = [-10.0, 120.0, 240.0]
 def case_ring():
     z0, z1 = -11.0, 29.4
     wall = ring(P.CASE_OD / 2, P.CASE_ID / 2, n=240)
-    m = extrude(wall, z1 - z0, z0)
+    # rectangular slot in the wall at +Y for the glued-in crown tube
+    slot = rect(9.2, 8.0, c=(0.0, (P.CASE_OD + P.CASE_ID) / 4))
+    m = extrude(wall, -9.0 - z0, z0)
+    m = stack(m, extrude(wall.difference(slot), 0.0 - (-9.0), -9.0))
+    m = stack(m, extrude(wall, z1 - 0.0, 0.0))
     # front shoulder (movement stop) + bezel
     m = stack(m, extrude(ring(P.CASE_ID / 2 + 0.01, 39.5, n=240),
                          29.4 - 17.2, 17.2))
     m = stack(m, extrude(ring(39.5, 38.0, n=240), 29.4 - 26.0, 26.0))
     m = stack(m, extrude(ring(39.5, 36.0, n=240), 29.4 - 28.2, 28.2))
+    # movement locating ribs (plates are r40 in the r41.5 bore)
+    for a in (45.0, 135.0, 225.0, 315.0):
+        c = 40.9 * np.array([np.cos(np.radians(a)), np.sin(np.radians(a))])
+        rib = circle(1.4, _pt(c)).intersection(circle(P.CASE_ID / 2 + 1.2,
+                                                      n=240))
+        m = stack(m, extrude(rib, 17.0 - (-9.0), -9.0))
     # back-cover screw bosses
     for a in CASE_BOSS_ANGLES:
         c = (P.CASE_ID / 2 - 2.2) * np.array([np.cos(np.radians(a)),
@@ -212,23 +232,122 @@ def case_ring():
         b = circle(2.8, _pt(c)).difference(circle(1.25, _pt(c)))
         b = b.intersection(circle(P.CASE_ID / 2 - 0.05, n=240))
         m = stack(m, extrude(b, -3.0 - (-9.6), -9.6))
-    # lugs with strap slots (NATO-style pass-through)
-    for s in (+1, -1):
-        block = rect(28.0, 6.5, c=(0, s * (P.CASE_OD / 2 + 2.2)))
-        block = block.difference(rect(P.LUG_W + 1.0, 2.6,
-                                      c=(0, s * (P.CASE_OD / 2 + 3.4))))
+    # lugs with strap slots on +/-X (crown sits at the wrist 3 o'clock)
+    for sgn in (+1, -1):
+        block = rect(6.5, 28.0, c=(sgn * (P.CASE_OD / 2 + 2.2), 0))
+        block = block.difference(rect(2.6, P.LUG_W + 1.0,
+                                      c=(sgn * (P.CASE_OD / 2 + 3.4), 0)))
         block = block.difference(circle(P.CASE_OD / 2 - 0.1, n=240))
-        m = stack(m, extrude(block, 8.0, -6.0))
+        m = stack(m, extrude(block, 10.0, z0))
     return m
 
 
 def case_back():
     d = circle(P.CASE_ID / 2 - 0.3, n=200)
-    d = d.difference(circle(5.0, _pt(P.P_BARREL)))           # winding access
     d = d.difference(circle(16.5, _pt(P.P_BALANCE)))         # balance window
     for a in CASE_BOSS_ANGLES:
         c = (P.CASE_ID / 2 - 2.2) * np.array([np.cos(np.radians(a)),
                                               np.sin(np.radians(a))])
         d = d.difference(circle(1.7, _pt(c)))
-    m = extrude(d, 1.4, -11.0)
+    # recess for the setting-wheel anchor disc (it dips below z=-9.4)
+    rec = circle(6.6, _pt(P.KW_SETTING))
+    m = extrude(d, 0.7, -11.0)
+    m = stack(m, extrude(d.difference(rec), 0.7, -10.3))
+    return m
+
+
+# ------------------------------------------------------------ keyless works
+def _lantern_bars(m, z_span):
+    """8 vertical bars on the KW_BAR_R ring (engaged by the stem fins)."""
+    for i in range(P.KW_BARS):
+        a = 2 * np.pi * i / P.KW_BARS
+        c = P.KW_BAR_R * np.array([np.cos(a), np.sin(a)])
+        m = stack(m, extrude(circle(P.KW_BAR_D / 2, _pt(c)),
+                             z_span[1] - z_span[0], z_span[0]))
+    return m
+
+
+def crown_wheel():
+    """Deep 12T spur (drives the ratchet) + flange + lantern bars."""
+    g = gear_outline(P.MODULE, P.KW_CW_SPUR_T, 0.0, backlash=P.BACKLASH)
+    m = extrude(g.difference(circle(P.PIN_HOLE_BEAR / 2)),
+                P.Z_CW_SPUR[1] - P.Z_CW_SPUR[0], P.Z_CW_SPUR[0])
+    fl = circle(P.KW_FLANGE_R).difference(circle(P.PIN_HOLE_BEAR / 2))
+    m = stack(m, extrude(fl, P.Z_CW_FLANGE[1] - P.Z_CW_FLANGE[0],
+                         P.Z_CW_FLANGE[0]))
+    return _lantern_bars(m, P.Z_BARS)
+
+
+def setting_shaft():
+    """Anchor disc + lantern bars at the back; shaft up through both
+    plates; 12T pinion meshing the minute wheel at the top."""
+    disc = circle(P.KW_FLANGE_R)
+    m = extrude(disc, P.Z_SET_DISC[1] - P.Z_SET_DISC[0], P.Z_SET_DISC[0])
+    m = _lantern_bars(m, P.Z_SET_BARS)
+    m = stack(m, extrude(circle(1.5), P.Z_SET_PINION[1] - P.Z_SET_DISC[1],
+                         P.Z_SET_DISC[1]))
+    pin = gear_outline(P.MODULE, P.KW_SET_PIN_T, 0.3, backlash=P.BACKLASH)
+    m = stack(m, extrude(pin, P.Z_SET_PINION[1] - P.Z_SET_PINION[0],
+                         P.Z_SET_PINION[0]))
+    return m
+
+
+def stem():
+    """Built along +Z (print orientation): 6-fin pinion at z=0, shaft,
+    flange (travel stop inside the crown tube), square for the crown."""
+    core = circle(1.4)
+    for i in range(P.KW_PINION_FINS):
+        a = 2 * np.pi * i / P.KW_PINION_FINS
+        c = (P.KW_PINION_OD / 4 + 0.35) * np.array([np.cos(a), np.sin(a)])
+        core = core.union(rect(P.KW_PINION_OD / 2 + 0.6, 1.2,
+                               c=_pt(c), ang=a))
+    core = core.intersection(circle(P.KW_PINION_OD / 2))
+    m = extrude(core, P.KW_PINION_W, 0.0)
+    m = stack(m, extrude(circle(P.KW_STEM_D / 2),
+                         11.4 - P.KW_PINION_W, P.KW_PINION_W))
+    m = stack(m, extrude(circle(3.1), 13.0 - 11.4, 11.4))     # flange
+    m = stack(m, extrude(circle(P.KW_STEM_D / 2), 21.3 - 13.0, 13.0))
+    m = stack(m, extrude(rect(3.0, 3.0), 24.8 - 21.3, 21.3))  # crown square
+    return m
+
+
+def stem_world(pull=0.0, mesh=None):
+    """Place the stem in the movement (pull: 0=wind .. KW_TRAVEL=set)."""
+    import trimesh as _tm
+    m = (mesh if mesh is not None else stem()).copy()
+    m.apply_transform(_tm.transformations.rotation_matrix(
+        -np.pi / 2, [1, 0, 0]))
+    m.apply_translation([0, P.KW_PUSH_Y - P.KW_PINION_W / 2 + pull,
+                         P.KW_STEM_Z])
+    return m
+
+
+def crown():
+    """Knurled crown, square socket; glues onto the stem square."""
+    body = circle(7.0)
+    for i in range(24):
+        a = 2 * np.pi * i / 24
+        body = body.union(circle(0.7, (7.0 * np.cos(a), 7.0 * np.sin(a))))
+    body = body.intersection(circle(7.8))
+    m = extrude(body.difference(square_hole(3.25)), 4.5, 0.0)
+    m = stack(m, extrude(body, 2.0, 4.5))                     # closed cap
+    return m
+
+
+def crown_world(pull=0.0, mesh=None):
+    import trimesh as _tm
+    m = (mesh if mesh is not None else crown()).copy()
+    m.apply_transform(_tm.transformations.rotation_matrix(
+        np.pi / 2, [1, 0, 0]))     # cap faces +Y (outward)
+    m.apply_translation([0, P.KW_PUSH_Y - P.KW_PINION_W / 2 + 24.8 + 1.0
+                         + pull, P.KW_STEM_Z])
+    return m
+
+
+def crown_tube():
+    """Glues into the case-wall slot; counterbore guides the stem flange
+    between the pushed (wind) and pulled-7mm (set) stops."""
+    m = extrude(circle(4.5).difference(circle(3.4)), 8.2, 0.0)
+    m = stack(m, extrude(circle(4.5).difference(circle(2.3)), 1.5, 8.2))
+    m = stack(m, extrude(rect(11.0, 11.0).difference(circle(3.4)), 1.6, 0.0))
     return m

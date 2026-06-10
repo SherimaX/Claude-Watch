@@ -114,7 +114,7 @@ def barrel_lid():
 
 
 def barrel_arbor():
-    m = extrude(square_hole(P.BARREL_SQ), 2.8, -6.0)            # winding sq
+    m = extrude(square_hole(P.BARREL_SQ), 5.6, -8.8)            # ratchet sq
     m = stack(m, extrude(circle(P.BARREL_ARBOR_BEAR_D / 2), 3.6, -3.2))
     core = circle(P.ARBOR_CORE_R)
     # inner spring hook: radial slot in the core
@@ -147,15 +147,9 @@ def mainspring(band=None):
 
 
 def ratchet_wheel():
-    z = P.RATCHET_T
-    pts = []
-    for i in range(z):
-        a0 = 2 * np.pi * i / z
-        a1 = 2 * np.pi * (i + 1) / z
-        pts.append([P.RATCHET_R * np.cos(a0), P.RATCHET_R * np.sin(a0)])
-        pts.append([(P.RATCHET_R - 1.6) * np.cos(a1),
-                    (P.RATCHET_R - 1.6) * np.sin(a1)])
-    w = poly(pts).union(circle(P.RATCHET_R - 1.4))
+    """18T m0.7 spur: meshed by the crown wheel for winding, held by the
+    click (the click beak angle makes involute teeth one-way)."""
+    w = gear_outline(P.MODULE, P.RATCHET_T, 0.0, backlash=P.BACKLASH)
     w = w.difference(square_hole(P.BARREL_SQ + 0.15))
     return zspan(w, P.Z_RATCHET)
 
@@ -168,16 +162,6 @@ def click():
     w = union(body, beak, spring, circle(2.2))
     w = w.difference(circle(P.PIN_HOLE_BEAR / 2))
     return zspan(w, P.Z_RATCHET)
-
-
-def winding_key():
-    m = extrude(ring(5.0, P.BARREL_SQ / 2 + 0.15,
-                     n=8).union(circle(5.0)).difference(
-        square_hole(P.BARREL_SQ + 0.3)), 5.0, 0.0)
-    m = stack(m, extrude(circle(5.0), 2.0, 5.0))
-    bar = rect(36.0, 7.0, c=(0, 0))
-    m = stack(m, extrude(union(bar, circle(5.0)), 4.0, 7.0))
-    return m
 
 
 # ------------------------------------------------------------- escapement

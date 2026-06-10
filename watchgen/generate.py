@@ -41,7 +41,11 @@ PARTS = {
     "mainspring_strong": (lambda: T.mainspring(band=1.6), False),
     "ratchet_wheel":   (T.ratchet_wheel, False),
     "click":           (T.click, False),
-    "winding_key":     (T.winding_key, True),
+    "crown_wheel":     (F.crown_wheel, True),
+    "setting_shaft":   (F.setting_shaft, True),
+    "stem":            (F.stem, False),
+    "crown":           (F.crown, False),
+    "crown_tube":      (F.crown_tube, False),
     "lever":           (T.lever, True),
     "roller_main":     (T.roller_main, True),
     "roller_safety":   (T.roller_safety, False),
@@ -128,6 +132,40 @@ def run_checks():
     overlap("escape wheel / pallet pins", P.Z_ESC_W, P.PALLET_PIN_Z)
     overlap("cannon / minute wheel", P.Z_CANNON_G, P.Z_MINUTE_W)
     overlap("minute pinion / hour wheel", P.Z_MINUTE_P, P.Z_HOUR_W)
+
+    print("keyless works:")
+    S, CW, B = P.KW_SETTING, P.KW_CROWN_WHEEL, P.P_BARREL
+    bar_out = P.KW_BAR_R + P.KW_BAR_D / 2
+    cw_tip = 0.7 * (P.KW_CW_SPUR_T / 2 + 1.3)
+    chk("setting shaft vs drum (plan)", _d(S, B) - P.DRUM_OR - 1.7, 0.3)
+    chk("setting bars vs CW flange", _d(CW, S) - bar_out - P.KW_FLANGE_R, 0.15)
+    err = abs(_d(CW, B) - 0.35 * (P.KW_CW_SPUR_T + P.RATCHET_T))
+    chk("crown spur/ratchet mesh (err)", 0.2 - err, 0.0)
+    err2 = abs(_d(S, P.P_MINUTE) - 0.35 * (P.KW_SET_PIN_T + P.MINUTE_W_T))
+    chk("setting pinion/minute wheel mesh (err)", 0.25 - err2, 0.0)
+    chk("setting pinion vs hour wheel",
+        _d(S, (0, 0)) - 0.7 * (P.HOUR_W_T / 2 + 1)
+        - 0.7 * (P.KW_SET_PIN_T / 2 + 1.3), 0.3)
+    for a in P.DIAL_FEET_ANGLES:
+        c = P.DIAL_FEET_R * np.array([np.cos(np.radians(a)),
+                                      np.sin(np.radians(a))])
+        chk(f"dial foot@{a:.0f} vs setting pinion",
+            _d(c, S) - 0.7 * (P.KW_SET_PIN_T / 2 + 1.3) - 2.5, 0.3)
+    # stem fin sweep (cylinder r=OD/2 about y-axis at z=KW_STEM_Z)
+    fr = P.KW_PINION_OD / 2
+    chk("fins clear pocket floor", P.POCKET_FLOOR - (P.KW_STEM_Z + fr), 0.2)
+    chk("fins clear CW flange", (P.KW_STEM_Z - fr) - P.Z_CW_FLANGE[1], 0.1)
+    chk("fins clear setting disc", (P.KW_STEM_Z - fr) - P.Z_SET_DISC[1], 0.1)
+    chk("ratchet vs cover", P.Z_RATCHET[0] - (-9.4), 0.5)
+    # parked pinion strip (x +/-2.5, y +/-w/2) vs the OTHER wheel's bar
+    # annulus (outer 5.4): corner distance must exceed bar reach
+    halfw = P.KW_PINION_W / 2 + 0.2
+    c1 = np.array([-fr, P.KW_PUSH_Y + halfw])      # pushed, vs setting
+    chk("pushed fins vs setting bars", _d(S, c1) - bar_out, 0.2)
+    c2 = np.array([fr, P.KW_PULL_Y - halfw])       # pulled, vs crown whl
+    chk("pulled fins vs crown bars", _d(CW, c2) - bar_out, 0.2)
+    chk("setting bars vs case wall",
+        P.CASE_ID / 2 - (_d(S, (0, 0)) + bar_out), 0.15)
     return ok
 
 
