@@ -1,5 +1,9 @@
 # Claude-Watch — a fully 3D-printable mechanical watch
 
+> **NEW:** the collection now includes **[Armilla](#armilla--a-spherical-tourbillon-table-clock)**,
+> a spherical-tourbillon *table clock* — a two-axis flying gyrotourbillon in
+> an armillary sphere, on a sphere, under a floating dial. See below.
+
 A mechanical (spring-driven, escapement-regulated) watch you can print on an
 ordinary 0.4 mm-nozzle FDM printer. Every functional part is printed; the only
 non-printed items are a handful of M3 screws, a few centimetres of 1.75 mm
@@ -297,3 +301,104 @@ wheel advances exactly one tooth per balance cycle before you print.
 If your printer runs tight or loose, tweak in `params.py`:
 `BACKLASH` (gear play), `PIN_HOLE_BEAR` / `PIN_HOLE_PRESS` (pivot fits),
 `CANNON_BORE` (hand-setting friction), and reprint only the affected parts.
+
+---
+
+# Armilla — a spherical-tourbillon table clock
+
+The second piece in the collection is not a watch but a **table clock**:
+a ~31 cm totem with a **two-axis flying spherical tourbillon**
+(gyrotourbillon) floating between an armillary-sphere base and a
+floating chapter-ring dial. Being a display piece, it is allowed to be
+big, theatrical and intricate where the watch had to be wearable.
+
+![table clock running](docs/clock_animation.gif)
+
+*One loop = one real minute, played at 8× speed: the outer cage turns
+once (60 s), the inner carriage five times (12 s), the second hand makes
+one revolution, and the visible seconds line spins up the swan-neck
+columns to the dial.*
+
+![tourbillon close-up](docs/clock_tourbillon_animation.gif)
+
+*The heart, orbit view: the gold outer cage spins about the vertical
+axis while the steel inner carriage somersaults about a horizontal axis
+carried by the cage — the balance axis tumbles through every
+orientation in space (that is the point of a multi-axis tourbillon:
+gravity error averages out over the sphere, not just a circle).*
+
+![beauty render](docs/clock_render.png)
+
+## Architecture (bottom to top)
+
+* **Plinth + cradle** — a turned base with a gold cradle ring.
+* **Base sphere** (Ø92) — an openwork armillary globe: solid polar caps,
+  six meridian ribs, two gold latitude hoops, and a gold-bezelled
+  porthole that frames the **mainspring barrel** inside (blued spiral,
+  Ø54 drum, axis pointing at the viewer). The **winding key** enters
+  through the back porthole; its arbor carries the ratchet held by a
+  click. A ring gear around the drum drives the **transfer pinion**
+  into the collar **gearbox** (which encloses a 48:1 reduction).
+* **Stalk + sun crown** — a fixed vase on the sphere's collar carries a
+  trumpet around the cage pipe, crowned by the stationary **sun wheel**.
+* **Tourbillon sphere** (Ø77) — the flying two-axis carriage:
+  * the **centre shaft** (1 rpm, from the gearbox) is keyed into the
+    cage pipe: the **outer cage** — two gold meridian rings at 45°/135°,
+    an equator ring, polar hub and finial — turns once per **60 s**;
+  * the stationary sun crown walks the **planetary lay shaft** (the
+    copper rod riding on the cage), which bevels into the carriage
+    pivot: the **inner carriage** — steel ring + bar — somersaults once
+    per **12 s** about a horizontal axis that itself rotates;
+  * inside ride the **escapement** (15-tooth wheel, pin-pallet lever)
+    and the **balance** (copper, 3 spokes, 6 timing screws) under a
+    **spherical hairspring** — a blued spiral climbing a dome, the
+    signature of real gyrotourbillons — all beneath an arched cock with
+    a ruby endstone.
+* **Seconds line** — the 1 rpm motion leaves the gearbox through 1:1
+  bevels: Y-rod → pod → **two spinning shaft segments** relayed at the
+  knuckle of the twin **swan-neck columns** that bow around the
+  tourbillon → canister inlet.
+* **Dial** (Ø104, tilted back 12°) — a floating ivory chapter ring with
+  raised batons and a 60-tick minute track, S-curve spokes, and **hour /
+  minute / second** hands (Breguet-style, blued; red seconds with a
+  pierced counterweight). The brass **canister** behind the hub encloses
+  the /60 and /12 motion works; seconds are taken 1:1 from the column
+  shaft.
+
+```
+mainspring barrel (1 rev/3 h) ── drum ring gear 30T ── transfer pinion 8T
+        └─[48:1 in the collar gearbox]─ centre shaft  (1 rev/min)
+              ├── tourbillon cage (60 s/rev)
+              │      └ sun crown 24T (fixed) ⇄ lay-shaft bevels ⇄ carriage
+              │         pivot 12T  →  inner carriage (12 s/rev)
+              │            └ escape pinion ⇄ 15T escape wheel ⇄ pin-pallet
+              │              lever ⇄ roller ⇄ balance (2.5 Hz, spherical
+              │              hairspring)
+              └── 1:1 bevels: Y-rod → pod → column shafts (relay knuckle)
+                    → canister: seconds 1:1, minutes /60, hours /12
+```
+
+## Regenerating
+
+```bash
+pip install -r requirements.txt
+python -m clockgen.generate        # clearance checks + 33 STLs + renders
+python -m clockgen.animate         # both GIFs (several minutes)
+```
+
+Everything is parametric (`clockgen/params.py`); the build is data-driven:
+each rotating part is modelled in its own spin frame and placed by a
+kinematic chain (`clockgen/parts.py`), so the same description produces
+the STLs, the 19 automated clearance checks (`clockgen/generate.py` —
+including the planetary-rod-versus-tumbling-carriage sweep) and the
+animations (`clockgen/animate.py`). `docs/clock_layout.png` shows the
+side elevation with the main dimensions.
+
+> **Honesty note:** unlike the watch, whose escapement was kinematically
+> simulated part-against-part, Armilla is a *design study*: the gear
+> ratios are consistent and every moving part clears every other (the
+> checks enforce it), but the bevel meshes are representative rather
+> than tooth-profiled. The STLs in `stl_clock/` print as a display
+> model — a non-running armillary automaton you can motorise from the
+> key arbor — not (yet) as a self-running clock. Printing the cage and
+> swan-necks needs supports; everything else prints flat.
