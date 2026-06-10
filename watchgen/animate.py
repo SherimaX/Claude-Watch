@@ -252,7 +252,7 @@ def animate_full(path="docs/watch_full_animation.gif"):
         (F.case_back(), "#aab4be", 0.12),
         (F.balance_cock(), "#557755", 0.40),
         (at(T.barrel_drum(), P.P_BARREL), "#b89030", 0.85),
-        (F.dial(), "#f5f0e6", 0.42),
+        (F.dial(), "#f5f0e6", 0.30),
     ]
     moving_base = {
         "center": (at(T.center_wheel(), (0, 0)), "#cc6633", 1.0, (0, 0)),
@@ -275,8 +275,8 @@ def animate_full(path="docs/watch_full_animation.gif"):
                     P.P_MINUTE),
         "hourw":  (at(F.hour_wheel(), (0, 0)), "#8a5c5c", 1.0, (0, 0)),
         "cannon": (at(F.cannon_pinion(), (0, 0)), "#8a5c5c", 1.0, (0, 0)),
-        "minhand": (hands_min, "#202020", 1.0, (0, 0)),
-        "hrhand": (hands_hr, "#202020", 1.0, (0, 0)),
+        "minhand": (hands_min, "#101010", 1.0, (0, 0)),
+        "hrhand": (hands_hr, "#28404f", 1.0, (0, 0)),
     }
     stem_base, crown_base = F.stem(), F.crown()
 
@@ -298,8 +298,9 @@ def animate_full(path="docs/watch_full_animation.gif"):
                  (phi[i - 1] > -2.5 >= phi[i]) else 0)
     th_esc = beats * 9.0
     for k in range(NT):
+        T0 = 3654.0     # 10:09 - minute-hand degrees since 12:00
         if k < NA:                              # A: running, time-lapse
-            minute[k] = 360.0 * k / NA * 0.25   # 15 min sweep
+            minute[k] = T0 + 360.0 * k / NA * 0.25   # 15 min sweep
             cam[k] = (52, -55)
             label[k] = "running (time-lapse)"
         elif k < NA + NB:                       # B: winding

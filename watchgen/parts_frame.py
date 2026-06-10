@@ -185,10 +185,10 @@ def dial():
     return m
 
 
-def _hand(length, tail, bore, hub_od):
+def _hand(length, tail, bore, hub_od, w_root=1.3, w_tip=0.45):
     h = ring(hub_od / 2, bore / 2)
-    blade = poly([(hub_od / 2 - 0.5, 1.3), (length, 0.45), (length, -0.45),
-                  (hub_od / 2 - 0.5, -1.3)])
+    blade = poly([(hub_od / 2 - 0.5, w_root), (length, w_tip),
+                  (length, -w_tip), (hub_od / 2 - 0.5, -w_root)])
     tailp = poly([(-hub_od / 2 + 0.5, 1.2), (-tail, 0.8), (-tail, -0.8),
                   (-hub_od / 2 + 0.5, -1.2)])
     return union(h, blade, tailp)
@@ -199,7 +199,9 @@ def minute_hand():
 
 
 def hour_hand():
-    return extrude(_hand(24.0, 7.0, 6.8, 9.8), 1.2, 0.0)
+    # short, broad blade so it reads clearly against the dial
+    return extrude(_hand(24.0, 7.0, 6.8, 9.8, w_root=2.1, w_tip=0.9),
+                   1.2, 0.0)
 
 
 # ---------------------------------------------------------------- case
